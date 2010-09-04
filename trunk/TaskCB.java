@@ -1,5 +1,20 @@
+
+/*
+* Grupo 05
+* RA: 081704
+* RA: 096993
+*
+* Status:
+*
+* 02/09/2010
+* 1. Compila porÃ©m tem erros na simulaÃ§Ã£o.
+
+*
+* */ 
+
 package osp.Tasks;
 
+import java.util.Enumeration;
 import java.util.Vector;
 import osp.IFLModules.*;
 import osp.Threads.*;
@@ -33,17 +48,28 @@ public class TaskCB extends IflTaskCB
     */
 	
 	
-	private PortCB portsList;
-	private OpenFile filesList;
-	private ThreadCB threadsList;
+	private GenericList portsList;
+	private GenericList filesList;
+	private GenericList threadsList;
 	
-	
+        //private OpenFile swap;
+        //private PageTable pag;
+	//private String nome;
+
     public TaskCB()
     {
         // your code goes here
         super();
-        
-        
+
+        //Criacao das listas do task.
+    	threadsList = new GenericList();
+    	portsList = new GenericList();
+    	filesList = new GenericList();
+
+        //dados do task
+    	this.setCreationTime(HClock.get());
+    	this.setStatus(TaskLive);
+    	this.setPriority(0);         
     }
 
     /**
@@ -73,30 +99,31 @@ public class TaskCB extends IflTaskCB
     {
         // your code goes here
     	
-    	//tabela com a página do task.
-    	PageTable pag = new PageTable();
-    	this.setPageTable(pag);
-    	
-    	//Criação das listas do task.
-    	GenericList threadssList = new GenericList();
-    	GenericList portsList = new GenericList();
-    	GenericList filesList = new GenericList();
-    	
-    	//dados do task
-    	this.setCreationTime(HClock.get());
-    	this.setStatus(TaskLive);
-    	this.setPriority(0);
-    	
-    	//criação e definição do arquivo de swap desta task
-        String swap = FileSys.create(SwapDeviceMountPoint+this.getID(), MMU.getVirtualAddressBits());
-        OpenFile nome = OpenFile.open(nome, this);
-        this.setSwapFile(nome);
+        //criacao do task
+        TaskCB task = new TaskCB();
+  
+        //tabela com a pagina do task.
+    	PageTable pag = new PageTable(task);
+    	task.setPageTable(pag);
+
+       //criacao e definicao do arquivo de swap desta task
+        String nome = SwapDeviceMountPoint+task.getID();
+        FileSys.create(nome, (int)Math.pow(2, MMU.getVirtualAddressBits()));
+        OpenFile swap = OpenFile.open(nome, task);
         
-        //criação da primeira thread
-        
-        ThreadCB.create(this);
-        
-        //this.setSwapFile(OpenFile.open(FileSys.create(SwapDeviceMountPoint+this.getID(), MMU.getVirtualAddressBits()), this));
+        //se nao houver espaco para a criacao do arquivo entao ira despachar uma thread nova e retornar null
+        if(swap == null){
+          ThreadCB nova;
+          nova = ThreadCB.create(task);
+          nova.dispatch();
+          return null;
+        }
+        else task.setSwapFile(swap);
+
+    	//criacao da primeira thread
+        ThreadCB thread = ThreadCB.create(task);
+
+        return task;
         
     }
 
@@ -112,37 +139,38 @@ public class TaskCB extends IflTaskCB
     public void do_kill()
     {
         // your code goes here
-        Enumeration enum;
+        Enumeration num;
 		
 		//Remover threads
-		enum = threadsList.forwardIterator();
-		while(enum.hasMoreElements()) {
-			ThreadCB thread = enum.nextElement();
+		num = threadsList.forwardIterator();
+		while(num.hasMoreElements()) {
+			ThreadCB thread = (ThreadCB)num.nextElement();
 			thread.kill();
 		}
 		
 		//Remover portas
-		enum = portsList.forwardIterator();
-		while(enum.hasMoreElements()) {
-			PortCB port = enum.nextElement();
+		num = portsList.forwardIterator();
+		while(num.hasMoreElements()) {
+			PortCB port = (PortCB)num.nextElement();
 			port.destroy();
 		}
 		
 		//Mudar status pra terminado
 		this.setStatus(TaskTerm);
 		
-		//Desalocar memória
-		pag.deallocateMemory();
+		//Desalocar memoria
+		PageTable pag = this.getPageTable();
+                pag.deallocateMemory();
 		
 		//Fechar arquivos
-		enum = filesList.forwardIterator();
-		while(enum.hasMoreElements()) {
-			OpenFile file = enum.nextElement();
+		num = filesList.forwardIterator();
+		while(num.hasMoreElements()) {
+			OpenFile file = (OpenFile)num.nextElement();
 			file.close();
 		}
 		
 		//Destruir arquivo de swap
-		FileSys.delete(nome);		//mudar "nome" #######################################
+                FileSys.delete(SwapDeviceMountPoint+this.getID());		//mudar "nome" #######################################
 
     }
 
@@ -165,7 +193,7 @@ public class TaskCB extends IflTaskCB
     */
     public int do_addThread(ThreadCB thread)
     {
-        if(this.do_getThreadCount() < ThreadCB.MaxThreadsPerTask()) {
+        if(this.do_getThreadCount() < ThreadCB.MaxThreadsPerTask) {
 			threadsList.insert(thread);
 			return SUCCESS;
 		}
@@ -201,7 +229,7 @@ public class TaskCB extends IflTaskCB
     */ 
     public int do_addPort(PortCB newPort)
     {
-        if(this.do_getPortCount() < PortCB.MaxPortsPerTask()) {
+        if(this.do_getPortCount() < PortCB.MaxPortsPerTask) {
 			portsList.insert(newPort);
 			return SUCCESS;
 		}
