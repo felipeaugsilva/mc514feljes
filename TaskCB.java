@@ -37,6 +37,10 @@ import osp.Hardware.*;
 */
 public class TaskCB extends IflTaskCB
 {
+	private GenericList portsList;
+	private GenericList filesList;
+	private GenericList threadsList;
+	
     /**
        The task constructor. Must have
 
@@ -46,19 +50,8 @@ public class TaskCB extends IflTaskCB
 
        @OSPProject Tasks
     */
-	
-	
-	private GenericList portsList;
-	private GenericList filesList;
-	private GenericList threadsList;
-	
-        //private OpenFile swap;
-        //private PageTable pag;
-	//private String nome;
-
     public TaskCB()
     {
-        // your code goes here
         super();
 
         //Criacao das listas do task.
@@ -80,7 +73,6 @@ public class TaskCB extends IflTaskCB
     */
     public static void init()
     {
-        // your code goes here
 
     }
 
@@ -96,9 +88,7 @@ public class TaskCB extends IflTaskCB
         @OSPProject Tasks
     */
     static public TaskCB do_create()
-    {
-        // your code goes here
-    	
+    {    	
         //criacao do task
         TaskCB task = new TaskCB();
   
@@ -124,7 +114,6 @@ public class TaskCB extends IflTaskCB
         ThreadCB thread = ThreadCB.create(task);
 
         return task;
-        
     }
 
     /**
@@ -138,7 +127,6 @@ public class TaskCB extends IflTaskCB
     */
     public void do_kill()
     {
-        // your code goes here
         Enumeration num;
 		
 		//Remover threads
@@ -160,7 +148,7 @@ public class TaskCB extends IflTaskCB
 		
 		//Desalocar memoria
 		PageTable pag = this.getPageTable();
-                pag.deallocateMemory();
+        pag.deallocateMemory();
 		
 		//Fechar arquivos
 		num = filesList.forwardIterator();
@@ -170,8 +158,7 @@ public class TaskCB extends IflTaskCB
 		}
 		
 		//Destruir arquivo de swap
-                FileSys.delete(SwapDeviceMountPoint+this.getID());		//mudar "nome" #######################################
-
+        FileSys.delete(SwapDeviceMountPoint+this.getID());
     }
 
     /** 
@@ -193,7 +180,8 @@ public class TaskCB extends IflTaskCB
     */
     public int do_addThread(ThreadCB thread)
     {
-        if(this.do_getThreadCount() < ThreadCB.MaxThreadsPerTask) {
+        //Verifica se a task ja nao tem o maximo de threads
+		if(this.do_getThreadCount() < ThreadCB.MaxThreadsPerTask) {
 			threadsList.insert(thread);
 			return SUCCESS;
 		}
@@ -229,7 +217,8 @@ public class TaskCB extends IflTaskCB
     */ 
     public int do_addPort(PortCB newPort)
     {
-        if(this.do_getPortCount() < PortCB.MaxPortsPerTask) {
+        //Verifica se a task ja nao tem o maximo de portas associadas a ela
+		if(this.do_getPortCount() < PortCB.MaxPortsPerTask) {
 			portsList.insert(newPort);
 			return SUCCESS;
 		}
