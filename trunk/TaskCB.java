@@ -9,7 +9,10 @@
 * 02/09/2010
 * 1. Compila porém tem erros na simulação.
 
-*
+09/09/2010
+*1. O erro do programa era semântico, estava tentando acessar variáveis que na realidade eram locais.
+*2. Após corrigido o erro o programa funcionou normalmente.
+*3. A maior dificuldade encontrada foi o entendimento do código e quais variáveis eram necessárias para a correta execução dele.
 * */ 
 
 package osp.Tasks;
@@ -148,7 +151,7 @@ public class TaskCB extends IflTaskCB
 		
 		//Desalocar memoria
 		PageTable pag = this.getPageTable();
-        pag.deallocateMemory();
+                pag.deallocateMemory();
 		
 		//Fechar arquivos
 		num = filesList.forwardIterator();
