@@ -9,7 +9,9 @@
 * 1. Criação da do_create(não foi testada ainda)
 * 2. Começo da criação da do_kill.
 
-
+*16/09/2010
+*1. Término da do_kill
+*2. Criação do do_suspend e do_resume
 * */ 
 
 
@@ -34,7 +36,6 @@ import osp.Resources.*;
 public class ThreadCB extends IflThreadCB 
 {
 
-
     private GenericList readyQueue;
 
     /**
@@ -48,10 +49,9 @@ public class ThreadCB extends IflThreadCB
     */
     public ThreadCB()
     {
-      super();
-      
-      readyQueue = new GenericList();
-
+		super();
+      	readyQueue = new GenericList();
+		readyQueue.insert(this);
     }
 
     /**
@@ -85,16 +85,17 @@ public class ThreadCB extends IflThreadCB
     */
     static public ThreadCB do_create(TaskCB task)
     {
-        ThreadCB thread = new ThreadCB();
-        
-        if (task.getThreadCount() == MaxThreadsPerTask) return null;
-        else
-          if (task.addThread(thread) == FAILURE) return null;
+		if (task.getThreadCount() == MaxThreadsPerTask)
+			return null;
+
+		ThreadCB thread = new ThreadCB();
+
+        if (task.addThread(thread) == FAILURE)
+			return null;
          
         thread.setTask(task);
         thread.setPriority(0);
         thread.setStatus(ThreadReady);
-        readyQueue.insert(thread); 
         thread.dispatch();       
 
         return thread;    
@@ -115,24 +116,32 @@ public class ThreadCB extends IflThreadCB
     */
     public void do_kill()
     {
-       int status = this.getStatus();
+		TaskCB task = this.getTask(); 
+		int status = this.getStatus();
 
-       this.setStatus(ThreadKill); 
+		this.setStatus(ThreadKill);
 
-       switch(status){
-       case ThreadReady:   readyQueue.remove(this);
-                           break;
- 
-       case ThreadWaiting: for(int i = 0; i <= Device.getTableSize(); i++) Device.get(i).cancelPendingIO(this);
-                           break;
-  
+		task.removeThread(this);
+
+		switch(status) {
+
+			case ThreadReady:
+				readyQueue.remove(this);
+			break;
+
+			case ThreadWaiting:
+				for(int i = 0; i <= Device.getTableSize(); i++) Device.get(i).cancelPendingIO(this);
+			break;
+
+			case ThreadRunning:
+				if(task.getThreadCount() == 0)
+					task.kill();
+				else
+					ThreadCB.dispatch();
+				break;
        }
 
-       ResourcesCB.giveupResources(this);
-
-       
-       
-       
+		ResourceCB.giveupResources(this);
 
     }
 
@@ -154,7 +163,17 @@ public class ThreadCB extends IflThreadCB
     */
     public void do_suspend(Event event)
     {
-        // your code goes here
+        int status = this.getStatus();
+
+		if(status == ThreadRunning) {
+			this.setStatus(ThreadWaiting);
+			ThreadCB.dispatch();
+		}
+		else
+			this.setStatus(status+1);
+
+		if(!event.contains(this))
+			event.addThread(this);
 
     }
 
@@ -169,8 +188,16 @@ public class ThreadCB extends IflThreadCB
     */
     public void do_resume()
     {
-        // your code goes here
+        int status = this.getStatus();
 
+		switch(status){
+			case ThreadWaiting: this.setStatus(ThreadReady);
+								readyQueue.insert(this);
+								break;
+			default: this.setStatus(status-1);
+					 break;
+
+		ThreadCB.dispatch();
     }
 
     /** 
@@ -189,6 +216,7 @@ public class ThreadCB extends IflThreadCB
     public static int do_dispatch()
     {
         // your code goes here
+	return 0;
 
     }
 
