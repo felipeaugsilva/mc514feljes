@@ -12,6 +12,10 @@
 *16/09/2010
 *1. Término da do_kill
 *2. Criação do do_suspend e do_resume
+
+*23/09/2010
+*1. Inicio do_dispatch();
+*2. Há erros de compilação.
 * */ 
 
 
@@ -164,9 +168,12 @@ public class ThreadCB extends IflThreadCB
     public void do_suspend(Event event)
     {
         int status = this.getStatus();
+		TaskCB task = MMU.getPTBR().getTask();
 
 		if(status == ThreadRunning) {
 			this.setStatus(ThreadWaiting);
+			MMU.setPTBR(null);
+			task.setCurrentThread(null);
 			ThreadCB.dispatch();
 		}
 		else
@@ -196,6 +203,7 @@ public class ThreadCB extends IflThreadCB
 								break;
 			default: this.setStatus(status-1);
 					 break;
+		}
 
 		ThreadCB.dispatch();
     }
@@ -215,8 +223,27 @@ public class ThreadCB extends IflThreadCB
     */
     public static int do_dispatch()
     {
-        // your code goes here
-	return 0;
+		TaskCB task = MMU.getPTBR().getTask();
+		ThreadCB thread = task.getCurrentThread();
+		ThreadCB newThread;
+
+		if(readyQueue.isEmpty()) {
+			if(thread == null)
+				return FAILURE;
+			return SUCCESS;
+		}
+		if(thread != null) {
+			runningThread.setStatus(ThreadReady);
+			MMU.setPTBR(null);
+			task.setCurrentThread(null);
+		}
+
+		newThread = readyQueue.removeTail();
+		newThread.setStatus(ThreadRunning);
+		MMU.getPTBR().setPTBR(task.getPageTable());
+		task.setCurrentThread(newThread);
+
+		return SUCCESS;
 
     }
 
