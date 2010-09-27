@@ -20,7 +20,10 @@ public class TimerInterruptHandler extends IflTimerInterruptHandler
     */
     public void do_handleInterrupt()
     {
-        ThreadCB.dispatch();
+        /* Apenas chama dispatcher, visto que o algoritmo
+		   implementado (FCFS) nao usa time interrupt */
+		
+		ThreadCB.dispatch();
     }
 
 
