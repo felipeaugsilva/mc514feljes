@@ -41,7 +41,7 @@ import osp.Resources.*;
 public class ThreadCB extends IflThreadCB 
 {
 
-    private static GenericList readyQueue;
+    private static GenericList readyQueue;	//Ready queue para as threads
 
     /**
        The thread constructor. Must call 
@@ -65,7 +65,7 @@ public class ThreadCB extends IflThreadCB
     */
     public static void init()
     {
-		readyQueue = new GenericList();
+		readyQueue = new GenericList();		//Inicializacao da ready queue
     }
 
     /** 
@@ -87,6 +87,7 @@ public class ThreadCB extends IflThreadCB
     */
     static public ThreadCB do_create(TaskCB task)
     {
+		//Verifica se 'task' ja tem o maximo de threads
 		if (task.getThreadCount() == MaxThreadsPerTask) {
 			ThreadCB.dispatch();
 			return null;
@@ -94,16 +95,17 @@ public class ThreadCB extends IflThreadCB
 
 		ThreadCB thread = new ThreadCB();
 
-        if (task.addThread(thread) == FAILURE) {
+        //Adiciona a nova thread na lista de threads de 'task'
+		if (task.addThread(thread) == FAILURE) {
 			ThreadCB.dispatch();
 			return null;
 		}
          
-        thread.setTask(task);
-        thread.setPriority(0);
-        thread.setStatus(ThreadReady);
-		readyQueue.insert(thread);
-        ThreadCB.dispatch();
+        thread.setTask(task);			//Associa a nova thread a 'task'
+        thread.setPriority(0);			//Prioridade da thread
+        thread.setStatus(ThreadReady);	//Status: Ready
+		readyQueue.insert(thread);		//Insere na ready queue
+        ThreadCB.dispatch();			//Chama dispatcher
         return thread;    
     }
 
@@ -127,15 +129,18 @@ public class ThreadCB extends IflThreadCB
 		switch(this.getStatus()) {
 
 			case ThreadReady:
+				//Apenas remove da ready queue
 				readyQueue.remove(this);
 			break;
 
 			case ThreadRunning:
+				//"Remove" thread do processador
 				MMU.setPTBR(null);
 				task.setCurrentThread(null);
 			break;
 
 			default:
+				//Cancela eventos pendentes
 				for(int i = 0; i < Device.getTableSize(); i++)
 					Device.get(i).cancelPendingIO(this);
 			break;
@@ -143,10 +148,10 @@ public class ThreadCB extends IflThreadCB
 
 		this.setStatus(ThreadKill);
 
-		ResourceCB.giveupResources(this);
+		ResourceCB.giveupResources(this);	//Libera recursos
 
 		task.removeThread(this);
-		if(task.getThreadCount() == 0)
+		if(task.getThreadCount() == 0)		//'task' nao tem mais threads
 			task.kill();
 
 		ThreadCB.dispatch();
@@ -173,16 +178,17 @@ public class ThreadCB extends IflThreadCB
 		int status = this.getStatus();
 		TaskCB task = this.getTask();
 
+		//Se a thread estiver executando, remove do CPU
 		if(status == ThreadRunning) {
 			this.setStatus(ThreadWaiting);
 			MMU.setPTBR(null);
 			task.setCurrentThread(null);
 		}
-		else
+		else	//Status maior ou igual a ThreadWaiting
 			this.setStatus(status+1);
 
 		if(!event.contains(this))
-			event.addThread(this);
+			event.addThread(this);		//Insere na lista de espera do evento
 
 		ThreadCB.dispatch();
     }
@@ -203,11 +209,13 @@ public class ThreadCB extends IflThreadCB
 		switch(status) {
 
 			case ThreadWaiting:
+				//Status = ThreadWaiting: vai para ready queue
 				this.setStatus(ThreadReady);
 				readyQueue.insert(this);
 			break;
-
+			
 			default:
+				//Status >= ThreadWaiting: decrementa
 				this.setStatus(status-1);
 			break;
 		}
@@ -230,16 +238,19 @@ public class ThreadCB extends IflThreadCB
     */
     public static int do_dispatch()
     {		
+		//Algoritmo de escalonamento: First-come, first-served
+		
 		TaskCB task;
 		ThreadCB thread;
 
-		if(readyQueue.isEmpty()) {
-			if(MMU.getPTBR() == null)
+		if(readyQueue.isEmpty()) {		//Ready queue vazia
+			if(MMU.getPTBR() == null)	//Processador desocupado
 				return FAILURE;
-			return SUCCESS;
+			return SUCCESS;				//Continua com a thread que ja estava executando
 		}
 		
 		if(MMU.getPTBR() != null) {
+			//'Preempt' thread em execução, e insere na ready queue
 			task = MMU.getPTBR().getTask();
 			task.getCurrentThread().setStatus(ThreadReady);
 			readyQueue.insert(task.getCurrentThread());
@@ -247,6 +258,7 @@ public class ThreadCB extends IflThreadCB
 			task.setCurrentThread(null);
 		}
 
+		//Da controle do processador para a primeira thread inserida na ready queue
 		thread = (ThreadCB)readyQueue.removeTail();
 		task = thread.getTask();
 		thread.setStatus(ThreadRunning);
