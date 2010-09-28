@@ -16,7 +16,10 @@
 *23/09/2010
 *1. Inicio do_dispatch();
 *2. Há erros de compilação.
-* */ 
+
+*28/09/2010
+*1. Projeto concluido.
+* */
 
 
 package osp.Threads;
