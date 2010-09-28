@@ -206,19 +206,13 @@ public class ThreadCB extends IflThreadCB
     {
         int status = this.getStatus();
 
-		switch(status) {
-
-			case ThreadWaiting:
-				//Status = ThreadWaiting: vai para ready queue
-				this.setStatus(ThreadReady);
-				readyQueue.insert(this);
-			break;
-			
-			default:
-				//Status >= ThreadWaiting: decrementa
-				this.setStatus(status-1);
-			break;
+		//Status = ThreadWaiting: vai para ready queue
+		if(status == ThreadWaiting) {
+			this.setStatus(ThreadReady);
+			readyQueue.insert(this);
 		}
+		else	//Status >= ThreadWaiting: decrementa
+			this.setStatus(status-1);
 
 		ThreadCB.dispatch();
     }
