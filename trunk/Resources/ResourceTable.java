@@ -17,6 +17,9 @@ import osp.Tasks.*;
 
 public class ResourceTable extends IflResourceTable
 {
+    ResourceCB resources[];
+    
+
     /** Constructor for class ResourceTable 
         Must have super() as its first statement.
 
@@ -24,8 +27,8 @@ public class ResourceTable extends IflResourceTable
     */   
     public ResourceTable()  
     {
-        // your code goes here
-
+        super();
+        resources = new ResourceCB[ResourceTable.getSize()];
     }
 
 
