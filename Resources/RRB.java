@@ -24,7 +24,7 @@ public class RRB extends IflRRB
     */   
     public RRB(ThreadCB thread, ResourceCB resource,int quantity)
     {
-        // your code goes here
+        super(thread, resource, quantity);
 
     }
 
@@ -37,7 +37,20 @@ public class RRB extends IflRRB
     */
     public void do_grant()
     {
-        // your code goes here
+         RRB rrb;                        // deve apontar para o que? -- ver isso
+         ThreadCB thread;
+         ResourceCB resource;
+         int qty;
+
+         thread = rrb.getThread();      // thread que pediu recursos
+         resource = rrb.getResource();  // qual recurso foi pedido
+         qty = rrb.getQuantity();       // quantidade do recurso pedido
+
+
+         resource.setAvailable(resource.getAvailable() - qty);              
+         resource.setAllocated(thread, resource.getAllocated(thread) + qty);
+         rrb.setStatus(Granted);
+         rrb.notifyThreads();           //sinaliza para que a thread possa resumir
 
     }
 
