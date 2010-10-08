@@ -14,6 +14,10 @@ import osp.Memory.*;
 */
 public class ResourceCB extends IflResourceCB
 {
+    private static int available[];
+    private static Hashtable<Integer, Integer> allocation[];
+    private static Hashtable<Integer, Integer> request[];
+
     /**
        Creates a new ResourceCB instance with the given number of 
        available instances. This constructor must have super(qty) 
@@ -23,7 +27,8 @@ public class ResourceCB extends IflResourceCB
     */
     public ResourceCB(int qty)
     {
-        // your code goes here
+        super(qty);
+        available[this.getID()] = qty;
 
     }
 
@@ -35,8 +40,14 @@ public class ResourceCB extends IflResourceCB
     */
     public static void init()
     {
-        // your code goes here
-
+        int numRecursos = ResourceTable.getSize();
+        available = new int[numRecursos];
+        allocation = new Hashtable[numRecursos];
+        request = new Hashtable[numRecursos];
+        for(int i = 0; i < numRecursos; i++) {
+            allocation[i] = new Hashtable();
+            request[i] = new Hashtable();
+        }
     }
 
     /**
@@ -50,9 +61,9 @@ public class ResourceCB extends IflResourceCB
 
        @OSPProject Resources
     */
-    public RRB  do_acquire(int quantity) 
+    public RRB do_acquire(int quantity) 
     {
-        // your code goes here
+        return null; //remover
 
     }
 
@@ -64,7 +75,7 @@ public class ResourceCB extends IflResourceCB
     */
     public static Vector do_deadlockDetection()
     {
-        // your code goes here
+        return null; //remover
 
     }
 
