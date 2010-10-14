@@ -1,3 +1,14 @@
+/*
+* Grupo XY
+* RA: 081704
+* RA: 096993
+*
+* Status:
+*
+* 07/10/2010
+* 1. Definição de algumas variáveis em ResourceCB e implementação da classe RRB.
+* */ 
+
 package osp.Resources;
 
 import java.util.*;
