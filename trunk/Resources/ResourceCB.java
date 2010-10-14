@@ -40,11 +40,16 @@ public class ResourceCB extends IflResourceCB
     */
     public static void init()
     {
+        ResourceCB recurso;
         int numRecursos = ResourceTable.getSize();
+
         available = new int[numRecursos];
         allocation = new Hashtable[numRecursos];
         request = new Hashtable[numRecursos];
+
         for(int i = 0; i < numRecursos; i++) {
+            recurso = ResourceTable.getResourceCB(i);
+            available[i] = recurso.getTotal();
             allocation[i] = new Hashtable();
             request[i] = new Hashtable();
         }
@@ -75,7 +80,13 @@ public class ResourceCB extends IflResourceCB
     */
     public static Vector do_deadlockDetection()
     {
-        return null; //remover
+        int numRecursos = ResourceTable.getSize();
+        int work[] = new int[numRecursos];
+        boolean finish[]; //inicializar com numero total de processos
+
+        System.arraycopy(available, 0, work, 0, numRecursos);   //work = available
+
+        for(int i=0; i<)
 
     }
 
