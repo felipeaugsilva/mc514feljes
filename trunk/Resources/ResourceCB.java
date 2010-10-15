@@ -35,6 +35,7 @@ public class ResourceCB extends IflResourceCB
     private static Hashtable<Integer, Integer> request[];
     private static Hashtable<Integer, ThreadCB> threads;
     private static Vector<RRB> RRBs;
+    private static Hashtable<Integer, Integer> need[];
 
     /**
        Creates a new ResourceCB instance with the given number of 
@@ -63,11 +64,13 @@ public class ResourceCB extends IflResourceCB
         available = new int[numRecursos];
         allocation = new Hashtable[numRecursos];
         request = new Hashtable[numRecursos];
+	need = new Hashtable[numRecursos];
         RRBs = new Vector();
 
         for(int i = 0; i < numRecursos; i++) {
             allocation[i] = new Hashtable();
             request[i] = new Hashtable();
+			need[i] = new Hashtable();
         }
     }
 
@@ -85,18 +88,15 @@ public class ResourceCB extends IflResourceCB
     public RRB do_acquire(int quantity) 
     {
 
-
-        RRB rrb;
-
         int i, numRecursos = ResourceTable.getSize();
 
         Hashtable<Integer, Boolean> Finish[] = new Hashtable[numRecursos];
-      
+		
         boolean flag = true;
 
-	ThreadCB thread = MMU.getPTBR().getTask().getCurrentThread();
+	    ThreadCB thread = MMU.getPTBR().getTask().getCurrentThread();
 		
-	int work, alocado, necessario = ( this.getMaxClaim(thread) - this.getAllocated(thread) );
+	    int work, alocado, necessario = ( this.getMaxClaim(thread) - this.getAllocated(thread) );
 
         int id = this.getID();
    
@@ -106,75 +106,89 @@ public class ResourceCB extends IflResourceCB
 
         Enumeration keys_finish = Finish[id].keys(), elems_finish = Finish[id].elements();
 
-        for(i = 0; i < n; i++)
+        RRB rrb = new RRB(thread, this, quantity);
+        
+        //for(i = 0; i < n; i++)
+        while(keys_alloc.hasMoreElements()) 
           Finish[id].put((Integer)(keys_alloc.nextElement()), false);
 
         keys_alloc = allocation[id].keys();
        
+        
 		
         if( ResourceCB.getDeadlockMethod() == Avoidance )
-	{
+	    {
 		  if( quantity <= ( this.getMaxClaim(thread) - this.getAllocated(thread) ) )
 		  {
 		    if(quantity <= this.getAvailable())
 		    {
 			  work = this.getAvailable() - quantity;
-			  alocado = this.getAllocated(thread) - quantity;
+			  alocado = this.getAllocated(thread) + quantity;
 			  necessario = need[id].get(thread.getID()) - quantity;
-			  for( i = 0; i < n; i++)
+			  //for( i = 0; i < n; i++)
+			  while(keys_alloc.hasMoreElements())
 			  {
-                            threadID = (Integer)keys_alloc.nextElement();
+                threadID = (Integer)keys_alloc.nextElement();
 			    if(!((Boolean)(elems_finish.nextElement())))
 			    {
-                              if (work >= need[id].get(threadID))
-                              {
-                                 work = work + this.getAllocated(threads.get(threadID));
-                                 Finish[id].put(threadID, true);
-                                 i = -1;
-                                 keys_alloc = allocation[id].keys();
-                                 elems_finish = Finish[id].elements();
-                              }      
+                  if (work >= need[id].get(threadID))
+                  {
+                     work = work + this.getAllocated(threads.get(threadID));
+                     Finish[id].put(thread.getID(), true);
+                     keys_alloc = allocation[id].keys();
+                     elems_finish = Finish[id].elements();
+                   }      
 			    }
 				
 			  }
-                          elems_finish = Finish[id].elements();
+              elems_finish = Finish[id].elements();
 			  for(i = 0; i < n && flag; i++)
-                          {
-                            if(((Boolean)(elems_finish.nextElement()))) flag = true;
-                            else flag = false;
-                          }
+              {
+                if(!((Boolean)(elems_finish.nextElement()))) flag = false;
+              }
 		     }
 		     else
 		     {
-			//processo deve esperar
+			   //processo deve esperar
+		       rrb.setStatus(Suspended);
+		       thread.suspend(rrb);
+		       request[id].put(thread.getID(), quantity);
+		       threads.put(thread.getID(), thread);
+		       return rrb;
 		     }
 		  }
 		  else
 		  {
-		    //erro -> processo excedeu o maximo pedido
+			// processo excedeu o maximo pedido
+		    return null;
 		  }
-	    
-		
-		
-	}
+	    }
 
         if(flag)
         {
-         // atualiza allocation
-         // atualiza available
-         // colocar rrb no vetor
-         // rrb.do_grant()
-
+          //sistema em estado seguro	
+          // atualiza allocation
+          // atualiza available
+          // colocar rrb no vetor
+          // rrb.do_grant()
+          allocation[id].put(thread.getID(), (allocation[id].get(thread.getID()) + quantity));
+          available[id] = this.getAvailable() - quantity;
+          RRBs.add(rrb.getID(), rrb);
+          rrb.grant();
+          threads.put(thread.getID(), thread);
         }
         else
         {
-         //não aloca, retem o estado
+          // sistema em estado inseguro	
+          // nao aloca, retem o estado
+          // processo deve esperar??
+ 		  rrb.setStatus(Suspended);
+		  thread.suspend(rrb);
+		  request[id].put(thread.getID(), quantity);
+		  threads.put(thread.getID(), thread);
         }
-		
-		
-		return null; //remover
         
-
+        return rrb;
     }
 
     /**
@@ -285,8 +299,30 @@ public class ResourceCB extends IflResourceCB
     */
     public void do_release(int quantity)
     {
-        // your code goes here
-
+        ThreadCB thread = MMU.getPTBR().getTask().getCurrentThread();
+        
+        int id = this.getID(), quant;
+        
+        RRB rrb;
+        
+        Enumeration e = RRBs.elements();
+        
+        this.setAvailable( (this.getAvailable() + quantity) );
+        this.setAllocated(thread, (this.getAllocated(thread) - quantity) );
+        
+        available[id] = this.getAvailable();
+        allocation[id].put(thread.getID(), this.getAllocated(thread));
+        
+        while(e.hasMoreElements()) {
+            rrb = (RRB)e.nextElement();
+            quant = rrb.getQuantity();
+            if(quant <= available[id]) {
+                rrb.grant();
+                available[id] -= quant;
+                allocation[id].put(thread.getID(), quant);                
+            }
+        }
+                
     }
 
     /** Called by OSP after printing an error message. The student can
