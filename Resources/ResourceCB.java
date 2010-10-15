@@ -28,6 +28,8 @@ public class ResourceCB extends IflResourceCB
     private static int available[];
     private static Hashtable<Integer, Integer> allocation[];
     private static Hashtable<Integer, Integer> request[];
+    private static Hashtable<Integer, ThreadCB> threads;
+    private static Vector<RRB> RRBs;
 
     /**
        Creates a new ResourceCB instance with the given number of 
@@ -56,6 +58,7 @@ public class ResourceCB extends IflResourceCB
         available = new int[numRecursos];
         allocation = new Hashtable[numRecursos];
         request = new Hashtable[numRecursos];
+        RRBs = new Vector();
 
         for(int i = 0; i < numRecursos; i++) {
             allocation[i] = new Hashtable();
@@ -88,14 +91,61 @@ public class ResourceCB extends IflResourceCB
     */
     public static Vector do_deadlockDetection()
     {
+        Vector<ThreadCB> threadsEmDeadlock = new Vector();
+        int threadID;
         int numRecursos = ResourceTable.getSize();
         int work[] = new int[numRecursos];
-        boolean finish[]; //inicializar com numero total de processos
+        Hashtable<Integer, Boolean> finish = new Hashtable();
+        Enumeration e;
 
-        System.arraycopy(available, 0, work, 0, numRecursos);   //work = available
+        System.arraycopy(available, 0, work, 0, numRecursos);   // work = available
 
-        
+        for(int i = 0; i < numRecursos; i++) {
+            e = allocation[i].keys();
+            while(e.hasMoreElements()) {
+                threadID = (Integer)e.nextElement();
+                if(!finish.containsKey(threadID))
+                    finish.put(threadID, true);
+                if(allocation[i].get(threadID) != 0)
+                    finish.put(threadID, false);
+            }
+        }
 
+        boolean fim = false;
+
+        while(!fim) {
+            e = finish.keys();
+            while(e.hasMoreElements()) {
+                threadID =(Integer)e.nextElement();
+                if(!finish.get(threadID) && ResourceCB.requestMenorWork(work, threadID)) {
+                    for(int i = 0; i < numRecursos; i++)
+                        work[i] += allocation[i].get(threadID);
+                    finish.put(threadID, true);
+                    break;
+                }
+                fim = true;
+            }
+        }
+
+        ThreadCB thread = null;
+
+        e = finish.keys();
+        while(e.hasMoreElements()) {
+            threadID = (Integer)e.nextElement();
+            if(!finish.get(threadID))
+                thread = threads.get(threadID);
+                threadsEmDeadlock.add(thread);
+        }
+
+        if(threadsEmDeadlock.isEmpty())
+            return null;
+
+        //matar uma thread
+        thread = (ThreadCB)threadsEmDeadlock.firstElement();
+        thread.kill();
+        ResourceCB.do_deadlockDetection();
+
+        return threadsEmDeadlock;
     }
 
     /**
@@ -108,8 +158,24 @@ public class ResourceCB extends IflResourceCB
     */
     public static void do_giveupResources(ThreadCB thread)
     {
-        // your code goes here
+        int threadID = thread.getID();
+        int recursoID, quant;
+        Enumeration e = RRBs.elements();
+        RRB rrb;
 
+
+        for(int i = 0; i < ResourceTable.getSize(); i++) {
+            available[i] -= allocation[i].get(threadID);
+            allocation[i].put(threadID, 0);
+        }
+
+        while(e.hasMoreElements()) {
+            rrb = (RRB)e.nextElement();
+            recursoID = rrb.getResource().getID();
+            quant = rrb.getQuantity();
+            if(quant <= available[recursoID])
+                rrb.do_grant();
+        }
     }
 
     /**
@@ -155,6 +221,15 @@ public class ResourceCB extends IflResourceCB
     /*
        Feel free to add methods/fields to improve the readability of your code
     */
+
+    public static boolean requestMenorWork(int[] work, int ID)
+    {
+        for(int i = 0; i < ResourceTable.getSize(); i++) {
+            if(request[i].get(ID) > work[i])
+                return false;
+        }
+        return true;
+    }
 
 }
 
