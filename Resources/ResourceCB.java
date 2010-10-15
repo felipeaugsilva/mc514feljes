@@ -165,7 +165,7 @@ public class ResourceCB extends IflResourceCB
 
 
         for(int i = 0; i < ResourceTable.getSize(); i++) {
-            available[i] -= allocation[i].get(threadID);
+            available[i] += allocation[i].get(threadID);
             allocation[i].put(threadID, 0);
         }
 
@@ -173,8 +173,11 @@ public class ResourceCB extends IflResourceCB
             rrb = (RRB)e.nextElement();
             recursoID = rrb.getResource().getID();
             quant = rrb.getQuantity();
-            if(quant <= available[recursoID])
+            if(quant <= available[recursoID]) {
                 rrb.do_grant();
+                available[recursoID] -= quant;
+                allocation[recursoID].put(rrb.getThread().getID(), quant);
+            }
         }
     }
 
