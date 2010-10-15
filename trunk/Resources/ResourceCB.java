@@ -7,6 +7,11 @@
 *
 * 07/10/2010
 * 1. Definição de algumas variáveis em ResourceCB e implementação da classe RRB.
+*
+*14/10/2010
+*1. Feito o deadlock detection e o algoritmo do deadlock avoidance(falta ainda implementar a parte de alocacao de recursos para a thread)
+*2. Feito o do_giveupresources 
+*OBS: Nada foi testado ainda.
 * */ 
 
 package osp.Resources;
@@ -79,6 +84,95 @@ public class ResourceCB extends IflResourceCB
     */
     public RRB do_acquire(int quantity) 
     {
+
+
+        RRB rrb;
+
+        int i, numRecursos = ResourceTable.getSize();
+
+        Hashtable<Integer, Boolean> Finish[] = new Hashtable[numRecursos];
+      
+        boolean flag = true;
+
+	ThreadCB thread = MMU.getPTBR().getTask().getCurrentThread();
+		
+	int work, alocado, necessario = ( this.getMaxClaim(thread) - this.getAllocated(thread) );
+
+        int id = this.getID();
+   
+        int n = allocation[id].size(), threadID;
+
+        Enumeration keys_alloc = allocation[id].keys();
+
+        Enumeration keys_finish = Finish[id].keys(), elems_finish = Finish[id].elements();
+
+        for(i = 0; i < n; i++)
+          Finish[id].put((Integer)(keys_alloc.nextElement()), false);
+
+        keys_alloc = allocation[id].keys();
+       
+		
+        if( ResourceCB.getDeadlockMethod() == Avoidance )
+	{
+		  if( quantity <= ( this.getMaxClaim(thread) - this.getAllocated(thread) ) )
+		  {
+		    if(quantity <= this.getAvailable())
+		    {
+			  work = this.getAvailable() - quantity;
+			  alocado = this.getAllocated(thread) - quantity;
+			  necessario = need[id].get(thread.getID()) - quantity;
+			  for( i = 0; i < n; i++)
+			  {
+                            threadID = (Integer)keys_alloc.nextElement();
+			    if(!((Boolean)(elems_finish.nextElement())))
+			    {
+                              if (work >= need[id].get(threadID))
+                              {
+                                 work = work + this.getAllocated(threads.get(threadID));
+                                 Finish[id].put(threadID, true);
+                                 i = -1;
+                                 keys_alloc = allocation[id].keys();
+                                 elems_finish = Finish[id].elements();
+                              }      
+			    }
+				
+			  }
+                          elems_finish = Finish[id].elements();
+			  for(i = 0; i < n && flag; i++)
+                          {
+                            if(((Boolean)(elems_finish.nextElement()))) flag = true;
+                            else flag = false;
+                          }
+		     }
+		     else
+		     {
+			//processo deve esperar
+		     }
+		  }
+		  else
+		  {
+		    //erro -> processo excedeu o maximo pedido
+		  }
+	    
+		
+		
+	}
+
+        if(flag)
+        {
+         // atualiza allocation
+         // atualiza available
+         // colocar rrb no vetor
+         // rrb.do_grant()
+
+        }
+        else
+        {
+         //não aloca, retem o estado
+        }
+		
+		
+		return null; //remover
         
 
     }
