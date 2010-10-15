@@ -79,7 +79,7 @@ public class ResourceCB extends IflResourceCB
     */
     public RRB do_acquire(int quantity) 
     {
-        return null; //remover
+        
 
     }
 
@@ -177,6 +177,7 @@ public class ResourceCB extends IflResourceCB
                 rrb.do_grant();
                 available[recursoID] -= quant;
                 allocation[recursoID].put(rrb.getThread().getID(), quant);
+                //remover do vetor
             }
         }
     }

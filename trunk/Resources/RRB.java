@@ -42,15 +42,15 @@ public class RRB extends IflRRB
          ResourceCB resource;
          int qty;
 
-         thread = rrb.getThread();      // thread que pediu recursos
-         resource = rrb.getResource();  // qual recurso foi pedido
-         qty = rrb.getQuantity();       // quantidade do recurso pedido
+         thread = this.getThread();      // thread que pediu recursos
+         resource = this.getResource();  // qual recurso foi pedido
+         qty = this.getQuantity();       // quantidade do recurso pedido
 
 
          resource.setAvailable(resource.getAvailable() - qty);              
          resource.setAllocated(thread, resource.getAllocated(thread) + qty);
-         rrb.setStatus(Granted);
-         rrb.notifyThreads();           //sinaliza para que a thread possa resumir
+         this.setStatus(Granted);
+         this.notifyThreads();           //sinaliza para que a thread possa resumir
 
     }
 
