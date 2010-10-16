@@ -123,13 +123,13 @@ public class ResourceCB extends IflResourceCB
        
         
 		
-        if( ResourceCB.getDeadlockMethod() == Avoidance )
+        
+	if( quantity <= ( this.getMaxClaim(thread) - this.getAllocated(thread) ) )
 	{
-	  if( quantity <= ( this.getMaxClaim(thread) - this.getAllocated(thread) ) )
+	  if(quantity <= this.getAvailable())
 	  {
-	    if(quantity <= this.getAvailable())
+            if( ResourceCB.getDeadlockMethod() == Avoidance )
 	    {
-                
 	      work = this.getAvailable() - quantity;
 	      alocado = this.getAllocated(thread) + quantity;
 	      //if(need[id].get(thread.getID()) != null) necessario = need[id].get(thread.getID()) - quantity;
@@ -158,20 +158,19 @@ public class ResourceCB extends IflResourceCB
                 if(!((Boolean)(elems_finish.nextElement()))) flag = false;
               }
 	    }
-	    else
-	    {
-	      //processo deve esperar
-	      rrb.setStatus(Suspended);
-	      thread.suspend(rrb);
-              request[id].put(thread.getID(), quantity);
-	      threads.put(thread.getID(), thread);
-              RRBs.add(rrb);
-	      return rrb;
-	    }
 	  }
-	  else  return null;//processo excedeu o máximo pedido
-		
+          else
+	  {
+	    //processo deve esperar
+	    rrb.setStatus(Suspended);
+	    thread.suspend(rrb);
+            request[id].put(thread.getID(), quantity);
+	    threads.put(thread.getID(), thread);
+            RRBs.add(rrb);
+	    return rrb;
+	  }
         }
+        else return null;//processo excedeu o máximo pedido
 
         if(flag)
         {
