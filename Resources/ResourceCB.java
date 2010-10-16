@@ -330,7 +330,8 @@ public class ResourceCB extends IflResourceCB
             if(quant <= available[id]) {
                 rrb.grant();
                 available[id] -= quant;
-                allocation[id].put(thread.getID(), quant);                
+                allocation[id].put(thread.getID(), quant);
+                RRBs.remove(rrb);
             }
         }
                 
