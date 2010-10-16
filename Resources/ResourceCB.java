@@ -236,8 +236,11 @@ public class ResourceCB extends IflResourceCB
             while(e.hasMoreElements()) {
                 threadID =(Integer)e.nextElement();
                 if(!finish.get(threadID) && ResourceCB.requestMenorWork(work, threadID)) {
-                    for(int i = 0; i < numRecursos; i++)
-                        work[i] += allocation[i].get(threadID);
+                    for(int i = 0; i < numRecursos; i++) {
+                        if(allocation[i].get(threadID) != null)
+                            work[i] += allocation[i].get(threadID);
+                    }
+                    
                     finish.put(threadID, true);
                     continue test;
                 }
@@ -258,10 +261,18 @@ public class ResourceCB extends IflResourceCB
         if(threadsEmDeadlock.isEmpty())
             return null;
 
+        int i = threadsEmDeadlock.size() - 1;
+
+        do {
+            thread = (ThreadCB)threadsEmDeadlock.get(i--);
+            thread.kill();
+            threads.remove(thread.getID());
+        } while(ResourceCB.do_deadlockDetection() != null);
+        /*
         //matar uma thread
         thread = (ThreadCB)threadsEmDeadlock.firstElement();
         thread.kill();
-        ResourceCB.do_deadlockDetection();
+        ResourceCB.do_deadlockDetection();*/
 
         return threadsEmDeadlock;
     }
@@ -371,11 +382,21 @@ public class ResourceCB extends IflResourceCB
 
     public static boolean requestMenorWork(int[] work, int threadID)
     {
-        for(int i = 0; i < ResourceTable.getSize(); i++) {
-            if(request[i].get(threadID) > work[i])
+        Enumeration en = RRBs.elements();
+        RRB rrb;
+        
+        while(en.hasMoreElements()){
+            rrb = (RRB)en.nextElement();
+            if(rrb.getThread().getID() == threadID && rrb.getQuantity() > work[rrb.getResource().getID()])
                 return false;
         }
         return true;
+
+        /*for(int i = 0; i < ResourceTable.getSize(); i++) {
+            if(request[i].containsKey(threadID) && request[i].get(threadID) > work[i])
+                return false;
+        }
+        return true;*/
     }
 
 }
