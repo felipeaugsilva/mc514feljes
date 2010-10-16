@@ -283,6 +283,7 @@ public class ResourceCB extends IflResourceCB
 
         for(int i = 0; i < ResourceTable.getSize(); i++) {
             available[i] += allocation[i].get(threadID);
+            ResourceTable.getResourceCB(i).setAvailable(available[i]);
             allocation[i].put(threadID, 0);
         }
 
