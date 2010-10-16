@@ -62,17 +62,16 @@ public class ResourceCB extends IflResourceCB
     {
         int numRecursos = ResourceTable.getSize();
 
-
         allocation = new Hashtable[numRecursos];
         request = new Hashtable[numRecursos];
-	need = new Hashtable[numRecursos];
+        need = new Hashtable[numRecursos];
         RRBs = new Vector();
         Finish = new Hashtable[numRecursos];
 
         for(int i = 0; i < numRecursos; i++) {
             allocation[i] = new Hashtable();
             request[i] = new Hashtable();
-	    need[i] = new Hashtable();
+            need[i] = new Hashtable();
             Finish[i] = new Hashtable();
         }
     }
@@ -230,6 +229,7 @@ public class ResourceCB extends IflResourceCB
 
         boolean fim = false;
 
+        test:
         while(!fim) {
             e = finish.keys();
             while(e.hasMoreElements()) {
@@ -238,10 +238,10 @@ public class ResourceCB extends IflResourceCB
                     for(int i = 0; i < numRecursos; i++)
                         work[i] += allocation[i].get(threadID);
                     finish.put(threadID, true);
-                    break;
+                    continue test;
                 }
-                fim = true;
             }
+            fim = true;
         }
 
         ThreadCB thread = null;
