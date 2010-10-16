@@ -275,27 +275,28 @@ public class ResourceCB extends IflResourceCB
     */
     public static void do_giveupResources(ThreadCB thread)
     {
-        int threadID = thread.getID();
-        int recursoID, quant;
-        Enumeration e = RRBs.elements();
+        Enumeration en = RRBs.elements();
+        ResourceCB recurso;
         RRB rrb;
 
-
         for(int i = 0; i < ResourceTable.getSize(); i++) {
-            available[i] += allocation[i].get(threadID);
-            ResourceTable.getResourceCB(i).setAvailable(available[i]);
-            allocation[i].put(threadID, 0);
+            recurso = ResourceTable.getResourceCB(i);
+            recurso.setAvailable(recurso.getAvailable() + recurso.getAllocated(thread));
+            recurso.setAllocated(thread, 0);
+            available[i] = recurso.getAvailable();
+            allocation[i].put(thread.getID(), 0);
         }
 
-        while(e.hasMoreElements()) {
-            rrb = (RRB)e.nextElement();
-            recursoID = rrb.getResource().getID();
-            quant = rrb.getQuantity();
-            if(quant <= available[recursoID]) {
+        threads.remove(thread.getID());
+
+        while(en.hasMoreElements()) {
+            rrb = (RRB)en.nextElement();
+            recurso = rrb.getResource();
+            if(rrb.getQuantity() <= recurso.getAvailable()) {
                 rrb.do_grant();
-                available[recursoID] -= quant;
-                allocation[recursoID].put(rrb.getThread().getID(), quant);
-                //remover do vetor
+                available[recurso.getID()] = recurso.getAvailable();
+                allocation[recurso.getID()].put(rrb.getThread().getID(), recurso.getAllocated(rrb.getThread()));
+                RRBs.remove(rrb);
             }
         }
     }
