@@ -94,7 +94,7 @@ public class ResourceCB extends IflResourceCB
 
         //Hashtable<Integer, Boolean> Finish[] = new Hashtable[numRecursos];
 		
-        boolean flag = true;
+        boolean flag = true, flag1 = true;
 
 	ThreadCB thread = MMU.getPTBR().getTask().getCurrentThread();
 		
@@ -132,20 +132,22 @@ public class ResourceCB extends IflResourceCB
                 
 	      work = this.getAvailable() - quantity;
 	      alocado = this.getAllocated(thread) + quantity;
-	      necessario = need[id].get(thread.getID()) - quantity;
+	      //if(need[id].get(thread.getID()) != null) necessario = need[id].get(thread.getID()) - quantity;
+              //else necessario = quantity;
 
 	      while(keys_alloc.hasMoreElements())
 	      {
                 threadID = (Integer)keys_alloc.nextElement();
 		if(!((Boolean)(elems_finish.nextElement())))
 		{
-                  if (work >= need[id].get(threadID))
-                  {
-                     work = work + this.getAllocated(threads.get(threadID));
-                     Finish[id].put(thread.getID(), true);
-                     keys_alloc = allocation[id].keys();
-                     elems_finish = Finish[id].elements();
-                   }      
+                    if (work >= need[id].get(thread.getID()) )
+                    {
+                       work = work + this.getAllocated(threads.get(threadID));
+                       Finish[id].put(thread.getID(), true);
+                       keys_alloc = allocation[id].keys();
+                       elems_finish = Finish[id].elements();
+                    }
+
 		}
 				
 	      }
@@ -163,6 +165,7 @@ public class ResourceCB extends IflResourceCB
 	      thread.suspend(rrb);
               request[id].put(thread.getID(), quantity);
 	      threads.put(thread.getID(), thread);
+              RRBs.add(rrb);
 	      return rrb;
 	    }
 	  }
@@ -175,13 +178,11 @@ public class ResourceCB extends IflResourceCB
           //sistema em estado seguro	
           // atualiza allocation
           // atualiza available
-          // colocar rrb no vetor
           // rrb.do_grant()
             
           if(allocation[id].get(thread.getID()) != null) allocation[id].put(thread.getID(), (allocation[id].get(thread.getID()) + quantity));
           else allocation[id].put(thread.getID(), quantity);
           available[id] = this.getAvailable() - quantity;
-          RRBs.add(rrb);
           rrb.grant();
           threads.put(thread.getID(), thread);
         }
@@ -192,6 +193,7 @@ public class ResourceCB extends IflResourceCB
           // processo deve esperar??
  	  rrb.setStatus(Suspended);
 	  thread.suspend(rrb);
+          RRBs.add(rrb);
 	  request[id].put(thread.getID(), quantity);
 	  threads.put(thread.getID(), thread);
         }
