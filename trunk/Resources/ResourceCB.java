@@ -286,7 +286,7 @@ public class ResourceCB extends IflResourceCB
             recurso.setAvailable(recurso.getAvailable() + recurso.getAllocated(thread));
             recurso.setAllocated(thread, 0);
             available[i] = recurso.getAvailable();
-            allocation[i].put(thread.getID(), 0);
+            allocation[i].remove(thread.getID());
         }
 
         threads.remove(thread.getID());
@@ -370,10 +370,10 @@ public class ResourceCB extends IflResourceCB
        Feel free to add methods/fields to improve the readability of your code
     */
 
-    public static boolean requestMenorWork(int[] work, int ID)
+    public static boolean requestMenorWork(int[] work, int threadID)
     {
         for(int i = 0; i < ResourceTable.getSize(); i++) {
-            if(request[i].get(ID) > work[i])
+            if(request[i].get(threadID) > work[i])
                 return false;
         }
         return true;

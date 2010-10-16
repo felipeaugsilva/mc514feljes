@@ -37,7 +37,6 @@ public class RRB extends IflRRB
     */
     public void do_grant()
     {
-         RRB rrb;                        // deve apontar para o que? -- ver isso
          ThreadCB thread;
          ResourceCB resource;
          int qty;
@@ -45,7 +44,6 @@ public class RRB extends IflRRB
          thread = this.getThread();      // thread que pediu recursos
          resource = this.getResource();  // qual recurso foi pedido
          qty = this.getQuantity();       // quantidade do recurso pedido
-
 
          resource.setAvailable(resource.getAvailable() - qty);              
          resource.setAllocated(thread, resource.getAllocated(thread) + qty);
