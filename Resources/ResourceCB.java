@@ -338,7 +338,9 @@ public class ResourceCB extends IflResourceCB
         int id = this.getID(), quant;
         
         RRB rrb;
-        
+
+        ResourceCB recurso;
+
         Enumeration e = RRBs.elements();
         
         this.setAvailable( (this.getAvailable() + quantity) );
@@ -346,8 +348,19 @@ public class ResourceCB extends IflResourceCB
         
         available[id] = this.getAvailable();
         allocation[id].put(thread.getID(), this.getAllocated(thread));
-        
+
         while(e.hasMoreElements()) {
+            rrb = (RRB)e.nextElement();
+            recurso = rrb.getResource();
+            if(rrb.getQuantity() <= recurso.getAvailable()) {
+                rrb.do_grant();
+                available[recurso.getID()] = recurso.getAvailable();
+                allocation[recurso.getID()].put(rrb.getThread().getID(), recurso.getAllocated(rrb.getThread()));
+                RRBs.remove(rrb);
+            }
+        }
+
+        /*while(e.hasMoreElements()) {
             rrb = (RRB)e.nextElement();
             quant = rrb.getQuantity();
             if(quant <= available[id]) {
@@ -356,7 +369,7 @@ public class ResourceCB extends IflResourceCB
                 allocation[id].put(thread.getID(), quant);
                 RRBs.remove(rrb);
             }
-        }
+        }*/
                 
     }
 
