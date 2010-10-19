@@ -213,34 +213,46 @@ public class ResourceCB extends IflResourceCB
         int numRecursos = ResourceTable.getSize();
         int work[] = new int[numRecursos];
         Hashtable<Integer, Boolean> finish = new Hashtable();
-        Enumeration e;
+        Enumeration en;
 
         System.arraycopy(available, 0, work, 0, numRecursos);   // work = available
 
-        for(int i = 0; i < numRecursos; i++) {
-            e = allocation[i].keys();
-            while(e.hasMoreElements()) {
-                threadID = (Integer)e.nextElement();
+        en = threads.keys();
+        while(en.hasMoreElements()){
+            threadID = (Integer)en.nextElement();
+            for(int i=0; i < numRecursos; i++) {
+                if(allocation[i].containsKey(threadID)) {
+                    if(!finish.containsKey(threadID))
+                        finish.put(threadID, true);
+                    if(allocation[i].get(threadID) != 0)
+                        finish.put(threadID, false);
+                }
+            }
+        }
+
+        /*for(int i = 0; i < numRecursos; i++) {
+            en = allocation[i].keys();
+            while(en.hasMoreElements()) {
+                threadID = (Integer)en.nextElement();
                 if(!finish.containsKey(threadID))
                     finish.put(threadID, true);
                 if(allocation[i].get(threadID) != 0)
                     finish.put(threadID, false);
             }
-        }
+        }*/
 
         boolean fim = false;
 
         test:
         while(!fim) {
-            e = finish.keys();
-            while(e.hasMoreElements()) {
-                threadID =(Integer)e.nextElement();
+            en = finish.keys();
+            while(en.hasMoreElements()) {
+                threadID =(Integer)en.nextElement();
                 if(!finish.get(threadID) && ResourceCB.requestMenorWork(work, threadID)) {
                     for(int i = 0; i < numRecursos; i++) {
                         if(allocation[i].get(threadID) != null)
                             work[i] += allocation[i].get(threadID);
                     }
-                    
                     finish.put(threadID, true);
                     continue test;
                 }
@@ -250,12 +262,11 @@ public class ResourceCB extends IflResourceCB
 
         ThreadCB thread = null;
 
-        e = finish.keys();
-        while(e.hasMoreElements()) {
-            threadID = (Integer)e.nextElement();
+        en = finish.keys();
+        while(en.hasMoreElements()) {
+            threadID = (Integer)en.nextElement();
             if(!finish.get(threadID))
-                thread = threads.get(threadID);
-                threadsEmDeadlock.add(thread);
+                threadsEmDeadlock.add(threads.get(threadID));
         }
 
         if(threadsEmDeadlock.isEmpty())
