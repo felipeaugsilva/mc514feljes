@@ -12,6 +12,10 @@
 *1. Feito o deadlock detection e o algoritmo do deadlock avoidance(falta ainda implementar a parte de alocacao de recursos para a thread)
 *2. Feito o do_giveupresources 
 *OBS: Nada foi testado ainda.
+*
+*19/10/2010
+*1. Tentativa de verificar erros sem sucesso.
+*
 * */ 
 
 package osp.Resources;
