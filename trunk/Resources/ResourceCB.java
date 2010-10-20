@@ -157,14 +157,21 @@ public class ResourceCB extends IflResourceCB
               {
                 if(!((Boolean)(elems_finish.nextElement()))) flag = false;
               }
-	    }
+	    } //banqueiro
 	  }
           else
 	  {
 	    //processo deve esperar
 	    rrb.setStatus(Suspended);
 	    thread.suspend(rrb);
-            request[id].put(thread.getID(), quantity);
+            if(request[id].keys().hasMoreElements()) {
+                if(request[id].contains(thread.getID()))
+                    request[id].put(thread.getID(), request[id].get(thread.getID()) + quantity);
+                else
+                    request[id].put(thread.getID(), quantity);
+            }
+            else
+                request[id].put(thread.getID(), quantity);
 	    threads.put(thread.getID(), thread);
             RRBs.add(rrb);
 	    return rrb;
@@ -179,8 +186,10 @@ public class ResourceCB extends IflResourceCB
           // atualiza available
           // rrb.do_grant()
             
-          if(allocation[id].get(thread.getID()) != null) allocation[id].put(thread.getID(), (allocation[id].get(thread.getID()) + quantity));
-          else allocation[id].put(thread.getID(), quantity);
+          if(allocation[id].get(thread.getID()) != null)
+              allocation[id].put(thread.getID(), (allocation[id].get(thread.getID()) + quantity));
+          else
+              allocation[id].put(thread.getID(), quantity);
           available[id] = this.getAvailable() - quantity;
           rrb.grant();
           threads.put(thread.getID(), thread);
@@ -404,6 +413,10 @@ public class ResourceCB extends IflResourceCB
        Feel free to add methods/fields to improve the readability of your code
     */
 
+    /*  Método auxiliar (do_deadlockDetection): retorna 'true' se
+        'request' < 'work'. Em vez de usar o próprio 'request', utiliza
+        os rrbs suspensos.
+    */
     public static boolean requestMenorWork(int[] work, int threadID)
     {
         Enumeration en = RRBs.elements();
@@ -415,12 +428,6 @@ public class ResourceCB extends IflResourceCB
                 return false;
         }
         return true;
-
-        /*for(int i = 0; i < ResourceTable.getSize(); i++) {
-            if(request[i].containsKey(threadID) && request[i].get(threadID) > work[i])
-                return false;
-        }
-        return true;*/
     }
 
 }
