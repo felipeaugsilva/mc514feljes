@@ -241,6 +241,7 @@ public class ResourceCB extends IflResourceCB
         int numRecursos = ResourceTable.getSize();
         int work[] = new int[numRecursos];
         Hashtable<Integer, Boolean> finish = new Hashtable();
+        RRB rrb;
         Enumeration en;
 
         System.arraycopy(available, 0, work, 0, numRecursos);   // work = available
@@ -248,7 +249,7 @@ public class ResourceCB extends IflResourceCB
         en = threads.keys();
         while(en.hasMoreElements()){
             threadID = (Integer)en.nextElement();
-            for(int i=0; i < numRecursos; i++) {
+            for(int i = 0; i < numRecursos; i++) {
                 if(allocation[i].containsKey(threadID)) {
                     if(!finish.containsKey(threadID))
                         finish.put(threadID, true);
@@ -290,6 +291,8 @@ public class ResourceCB extends IflResourceCB
 
         ThreadCB thread = null;
 
+        // verifica se as threads conseguirao ser finalizadas
+        // se nao, insere no vetor de threads em deadlock
         en = finish.keys();
         while(en.hasMoreElements()) {
             threadID = (Integer)en.nextElement();
@@ -297,21 +300,13 @@ public class ResourceCB extends IflResourceCB
                 threadsEmDeadlock.add(threads.get(threadID));
         }
 
+        // nao ha threads em Deadlock
         if(threadsEmDeadlock.isEmpty())
             return null;
 
-        int i = threadsEmDeadlock.size() - 1;
-
-        do {
-            thread = (ThreadCB)threadsEmDeadlock.get(i--);
-            thread.kill();
-            threads.remove(thread.getID());
-        } while(ResourceCB.do_deadlockDetection() != null);
-        /*
-        //matar uma thread
-        thread = (ThreadCB)threadsEmDeadlock.firstElement();
-        thread.kill();
-        ResourceCB.do_deadlockDetection();*/
+        // mata uma thread e chama do_deadlockDetection recursivamente
+        threadsEmDeadlock.firstElement().kill();
+        ResourceCB.do_deadlockDetection();
 
         return threadsEmDeadlock;
     }
@@ -326,10 +321,11 @@ public class ResourceCB extends IflResourceCB
     */
     public static void do_giveupResources(ThreadCB thread)
     {
-        Enumeration en = RRBs.elements();
+        Enumeration en;
         ResourceCB recurso;
         RRB rrb;
 
+        // libera todos os recursos alocados para a thread
         for(int i = 0; i < ResourceTable.getSize(); i++) {
             recurso = ResourceTable.getResourceCB(i);
             recurso.setAvailable(recurso.getAvailable() + recurso.getAllocated(thread));
@@ -338,21 +334,24 @@ public class ResourceCB extends IflResourceCB
             allocation[i].remove(thread.getID());
         }
 
+        // remove a thread do lista de RRBs, caso ela esteja na lista
+        en = RRBs.elements();
         while(en.hasMoreElements()) {
             rrb = (RRB)en.nextElement();
             if(rrb.getThread().getID() == thread.getID())
                 RRBs.remove(rrb);
         }
 
+        // remove thread da lista de threads
         threads.remove(thread.getID());
 
+        // verifica se ha algum RRB que pode ter seus recursos alocados
         en = RRBs.elements();
-
         while(en.hasMoreElements()) {
             rrb = (RRB)en.nextElement();
             recurso = rrb.getResource();
             if(rrb.getQuantity() <= recurso.getAvailable()) {
-                rrb.do_grant();
+                rrb.grant();
                 available[recurso.getID()] = recurso.getAvailable();
                 allocation[recurso.getID()].put(rrb.getThread().getID(), recurso.getAllocated(rrb.getThread()));
                 RRBs.remove(rrb);
@@ -406,7 +405,7 @@ public class ResourceCB extends IflResourceCB
             rrb = (RRB)e.nextElement();
             recurso = rrb.getResource();
             if(rrb.getQuantity() <= recurso.getAvailable()) {
-                rrb.do_grant();
+                rrb.grant();
                 available[recurso.getID()] = recurso.getAvailable();
                 allocation[recurso.getID()].put(rrb.getThread().getID(), recurso.getAllocated(rrb.getThread()));
                 RRBs.remove(rrb);
