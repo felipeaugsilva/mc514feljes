@@ -120,7 +120,7 @@ public class ResourceCB extends IflResourceCB
           //inicializar o vetor need
 
         while(keys_alloc.hasMoreElements()){
-          auxThread = threads.get(keys_alloc.nextElement());
+          auxThread = threads.get((Integer)keys_alloc.nextElement());
           need[id].put(auxThread.getID(), (this.getMaxClaim(auxThread) - this.getAllocated(auxThread)));
         }
 
@@ -338,7 +338,15 @@ public class ResourceCB extends IflResourceCB
             allocation[i].remove(thread.getID());
         }
 
+        while(en.hasMoreElements()) {
+            rrb = (RRB)en.nextElement();
+            if(rrb.getThread().getID() == thread.getID())
+                RRBs.remove(rrb);
+        }
+
         threads.remove(thread.getID());
+
+        en = RRBs.elements();
 
         while(en.hasMoreElements()) {
             rrb = (RRB)en.nextElement();
@@ -382,7 +390,7 @@ public class ResourceCB extends IflResourceCB
         allocation[id].put(thread.getID(), this.getAllocated(thread));
 
         //será que não tem que tirar o rrb aqui ?
-        /*
+        
         while(e.hasMoreElements() && flag){
             rrb = (RRB)e.nextElement();
             auxThread = rrb.getThread();
@@ -392,7 +400,7 @@ public class ResourceCB extends IflResourceCB
         e = RRBs.elements();
 
 
-        if(this.getAllocated(thread) == 0)  RRBs.remove(rrb);*/
+        if(this.getAllocated(thread) == 0)  RRBs.remove(rrb);
         
         while(e.hasMoreElements()) {
             rrb = (RRB)e.nextElement();
