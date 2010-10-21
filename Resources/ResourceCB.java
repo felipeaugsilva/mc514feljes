@@ -352,9 +352,11 @@ public class ResourceCB extends IflResourceCB
             recurso = rrb.getResource();
             if(rrb.getQuantity() <= recurso.getAvailable()) {
                 rrb.grant();
+                MyOut.print("osp.Resources.ResourceCB", "chamou grant");
                 available[recurso.getID()] = recurso.getAvailable();
                 allocation[recurso.getID()].put(rrb.getThread().getID(), recurso.getAllocated(rrb.getThread()));
                 RRBs.remove(rrb);
+                en = RRBs.elements();
             }
         }
     }
@@ -390,7 +392,7 @@ public class ResourceCB extends IflResourceCB
 
         //será que não tem que tirar o rrb aqui ?
         
-        while(e.hasMoreElements() && flag){
+        /*while(e.hasMoreElements() && flag){
             rrb = (RRB)e.nextElement();
             auxThread = rrb.getThread();
             if(thread.getID() == auxThread.getID()) flag = false;
@@ -400,6 +402,8 @@ public class ResourceCB extends IflResourceCB
 
 
         if(this.getAllocated(thread) == 0)  RRBs.remove(rrb);
+        */
+
         
         while(e.hasMoreElements()) {
             rrb = (RRB)e.nextElement();
@@ -409,6 +413,7 @@ public class ResourceCB extends IflResourceCB
                 available[recurso.getID()] = recurso.getAvailable();
                 allocation[recurso.getID()].put(rrb.getThread().getID(), recurso.getAllocated(rrb.getThread()));
                 RRBs.remove(rrb);
+                e = RRBs.elements();
             }
         }
 
