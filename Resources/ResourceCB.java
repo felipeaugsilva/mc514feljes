@@ -361,15 +361,19 @@ public class ResourceCB extends IflResourceCB
     */
     public void do_release(int quantity)
     {
-        ThreadCB thread = MMU.getPTBR().getTask().getCurrentThread();
+        ThreadCB thread = MMU.getPTBR().getTask().getCurrentThread(), auxThread;
         
         int id = this.getID(), quant;
         
-        RRB rrb;
+        RRB rrb = null;
 
         ResourceCB recurso;
 
         Enumeration e = RRBs.elements();
+        
+        Boolean flag = true;
+
+
         
         this.setAvailable( (this.getAvailable() + quantity) );
         this.setAllocated(thread, (this.getAllocated(thread) - quantity) );
@@ -377,6 +381,19 @@ public class ResourceCB extends IflResourceCB
         available[id] = this.getAvailable();
         allocation[id].put(thread.getID(), this.getAllocated(thread));
 
+        //será que não tem que tirar o rrb aqui ?
+        /*
+        while(e.hasMoreElements() && flag){
+            rrb = (RRB)e.nextElement();
+            auxThread = rrb.getThread();
+            if(thread.getID() == auxThread.getID()) flag = false;
+        }
+
+        e = RRBs.elements();
+
+
+        if(this.getAllocated(thread) == 0)  RRBs.remove(rrb);*/
+        
         while(e.hasMoreElements()) {
             rrb = (RRB)e.nextElement();
             recurso = rrb.getResource();
