@@ -100,7 +100,7 @@ public class ResourceCB extends IflResourceCB
 		
         boolean flag = true, flag1 = true;
 
-	ThreadCB thread = MMU.getPTBR().getTask().getCurrentThread();
+	ThreadCB thread = MMU.getPTBR().getTask().getCurrentThread(), auxThread;
 		
 	int work, alocado, necessario = ( this.getMaxClaim(thread) - this.getAllocated(thread) );
 
@@ -112,10 +112,17 @@ public class ResourceCB extends IflResourceCB
 
         Enumeration keys_finish, elems_finish;
 
+        Enumeration keys_need;
+
         RRB rrb = new RRB(thread, this, quantity);
 
         
-        
+          //inicializar o vetor need
+
+        while(keys_alloc.hasMoreElements()){
+          auxThread = threads.get(keys_alloc.nextElement());
+          need[id].put(auxThread.getID(), (this.getMaxClaim(auxThread) - this.getAllocated(auxThread)));
+        }
 
         while(keys_alloc.hasMoreElements()) 
           Finish[id].put((Integer)(keys_alloc.nextElement()), false);
@@ -124,7 +131,7 @@ public class ResourceCB extends IflResourceCB
         elems_finish = Finish[id].elements();
 
         keys_alloc = allocation[id].keys();
-       
+        keys_need = need[id].keys();
         
 		
         
@@ -135,19 +142,27 @@ public class ResourceCB extends IflResourceCB
             if( ResourceCB.getDeadlockMethod() == Avoidance )
 	    {
 	      work = this.getAvailable() - quantity;
-	      alocado = this.getAllocated(thread) + quantity;
-	      //if(need[id].get(thread.getID()) != null) necessario = need[id].get(thread.getID()) - quantity;
+	      alocado = this.getAllocated(thread);
+              //allocation[id].put(thread.getID(), (this.getAllocated(thread) + quantity));
+              if(keys_need.hasMoreElements()){
+                  if(need[id].contains(thread.getID()))need[id].put(thread.getID(), (need[id].get(thread.getID()) - quantity));
+                  else need[id].put(thread.getID(), quantity);
+              }
+              else need[id].put(thread.getID(), quantity);
+              //if(need[id].get(thread.getID()) != null) necessario = need[id].get(thread.getID()) - quantity;
               //else necessario = quantity;
 
-	      while(keys_alloc.hasMoreElements())
-	      {
+	      //while(keys_alloc.hasMoreElements())
+	      while(keys_finish.hasMoreElements())
+              {
                 threadID = (Integer)keys_alloc.nextElement();
 		if(!((Boolean)(elems_finish.nextElement())))
 		{
                     if (work >= need[id].get(thread.getID()) )
                     {
-                       work = work + this.getAllocated(threads.get(threadID));
-                       Finish[id].put(thread.getID(), true);
+                       if(thread.getID() == threadID) work = work + alocado;
+                       else work = work + this.getAllocated(threads.get(threadID));
+                       Finish[id].put(threadID, true);
                        keys_alloc = allocation[id].keys();
                        elems_finish = Finish[id].elements();
                     }
@@ -157,7 +172,7 @@ public class ResourceCB extends IflResourceCB
 	      }
 
               elems_finish = Finish[id].elements();
-	      for(i = 0; i < n && flag; i++)
+	      while(elems_finish.hasMoreElements() && flag)
               {
                 if(!((Boolean)(elems_finish.nextElement()))) flag = false;
               }
