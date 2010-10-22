@@ -115,71 +115,46 @@ public class ResourceCB extends IflResourceCB
 
         Enumeration keys_finish, elems_finish;
 
-        Enumeration keys_need;
+        Enumeration keys_need = need[id].keys(), en;
 
-        RRB rrb = new RRB(thread, this, quantity);
+        Vector<RRB> rrbs = new Vector();
+
+
+        RRB rrb = new RRB(thread, this, quantity), rrbaux;
 
         
           //inicializar o vetor need
 
-        while(keys_alloc.hasMoreElements()){
-          auxThread = threads.get((Integer)keys_alloc.nextElement());
-          need[id].put(auxThread.getID(), (this.getMaxClaim(auxThread) - this.getAllocated(auxThread)));
+
+        en = RRBs.elements();
+
+        while(en.hasMoreElements()){
+            rrbaux = (RRB)en.nextElement();
+            if(rrbaux.getID() == id) rrbs.add(rrbaux);
         }
 
-        while(keys_alloc.hasMoreElements()) 
-          Finish[id].put((Integer)(keys_alloc.nextElement()), false);
+        //rrbs.add(rrb);
 
-        keys_finish = Finish[id].keys();
-        elems_finish = Finish[id].elements();
 
-        keys_alloc = allocation[id].keys();
-        keys_need = need[id].keys();
-        
-		
-        
-	if( quantity <= ( this.getMaxClaim(thread) - this.getAllocated(thread) ) )
+        if( quantity <= ( this.getMaxClaim(thread) - this.getAllocated(thread) ) && quantity <= this.getMaxClaim(thread) )
 	{
 	  if(quantity <= this.getAvailable())
 	  {
             if( ResourceCB.getDeadlockMethod() == Avoidance )
 	    {
-	      work = this.getAvailable() - quantity;
-	      alocado = this.getAllocated(thread);
-              //allocation[id].put(thread.getID(), (this.getAllocated(thread) + quantity));
-              if(keys_need.hasMoreElements()){
-                  if(need[id].contains(thread.getID()))need[id].put(thread.getID(), (need[id].get(thread.getID()) - quantity));
-                  else need[id].put(thread.getID(), quantity);
-              }
-              else need[id].put(thread.getID(), quantity);
-              //if(need[id].get(thread.getID()) != null) necessario = need[id].get(thread.getID()) - quantity;
-              //else necessario = quantity;
-
-	      //while(keys_alloc.hasMoreElements())
-	      while(keys_finish.hasMoreElements())
-              {
-                threadID = (Integer)keys_alloc.nextElement();
-		if(!((Boolean)(elems_finish.nextElement())))
-		{
-                    if (work >= need[id].get(thread.getID()) )
-                    {
-                       if(thread.getID() == threadID) work = work + alocado;
-                       else work = work + this.getAllocated(threads.get(threadID));
-                       Finish[id].put(threadID, true);
-                       keys_alloc = allocation[id].keys();
-                       elems_finish = Finish[id].elements();
+                work = this.getAvailable() - quantity;
+	        en = rrbs.elements();
+                while(en.hasMoreElements()) {
+                    rrbaux = (RRB)en.nextElement();
+                    if(rrbaux.getQuantity() <= work) {
+                        work += rrbaux.getQuantity();
+                        rrbs.remove(rrbaux);
+                        en = rrbs.elements();
                     }
-
-		}
-				
-	      }
-
-              elems_finish = Finish[id].elements();
-	      while(elems_finish.hasMoreElements() && flag)
-              {
-                if(!((Boolean)(elems_finish.nextElement()))) flag = false;
-              }
+               }
 	    } //banqueiro
+
+            if(!(rrbs.isEmpty())) flag = false;
 	  }
           else
 	  {
@@ -224,9 +199,16 @@ public class ResourceCB extends IflResourceCB
  	  rrb.setStatus(Suspended);
 	  thread.suspend(rrb);
           RRBs.add(rrb);
-	  request[id].put(thread.getID(), quantity);
+          if(request[id].keys().hasMoreElements()) {
+              if(request[id].contains(thread.getID()))
+                  request[id].put(thread.getID(), request[id].get(thread.getID()) + quantity);
+              else
+                  request[id].put(thread.getID(), quantity);
+          }
+          else
+                request[id].put(thread.getID(), quantity);
 	  threads.put(thread.getID(), thread);
-        }
+          }
         
         return rrb;
     }
