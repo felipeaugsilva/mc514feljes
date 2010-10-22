@@ -237,15 +237,19 @@ public class ResourceCB extends IflResourceCB
     public static Vector do_deadlockDetection()
     {
         Vector<ThreadCB> threadsEmDeadlock = new Vector();
+        Hashtable<Integer, Boolean> finish = new Hashtable();
         int threadID;
         int numRecursos = ResourceTable.getSize();
         int work[] = new int[numRecursos];
-        Hashtable<Integer, Boolean> finish = new Hashtable();
         RRB rrb;
         Enumeration en;
+        boolean fim = false;
 
-        System.arraycopy(available, 0, work, 0, numRecursos);   // work = available
+        // work = available
+        System.arraycopy(available, 0, work, 0, numRecursos);
 
+        // se a thread nao tem nenhum recurso alocado seta finish como true,
+        // caso contrario, seta como false
         en = threads.keys();
         while(en.hasMoreElements()){
             threadID = (Integer)en.nextElement();
@@ -259,19 +263,7 @@ public class ResourceCB extends IflResourceCB
             }
         }
 
-        /*for(int i = 0; i < numRecursos; i++) {
-            en = allocation[i].keys();
-            while(en.hasMoreElements()) {
-                threadID = (Integer)en.nextElement();
-                if(!finish.containsKey(threadID))
-                    finish.put(threadID, true);
-                if(allocation[i].get(threadID) != 0)
-                    finish.put(threadID, false);
-            }
-        }*/
-
-        boolean fim = false;
-
+        // testa se as threads conseguirao ser finalizadas sem entrar em Deadlock
         test:
         while(!fim) {
             en = finish.keys();
@@ -289,10 +281,8 @@ public class ResourceCB extends IflResourceCB
             fim = true;
         }
 
-        ThreadCB thread = null;
-
-        // verifica se as threads conseguirao ser finalizadas
-        // se nao, insere no vetor de threads em deadlock
+        // se houver alguma thread com finish igual a false, o sistema
+        // esta em Deadlock
         en = finish.keys();
         while(en.hasMoreElements()) {
             threadID = (Integer)en.nextElement();
@@ -352,7 +342,6 @@ public class ResourceCB extends IflResourceCB
             recurso = rrb.getResource();
             if(rrb.getQuantity() <= recurso.getAvailable()) {
                 rrb.grant();
-                MyOut.print("osp.Resources.ResourceCB", "chamou grant");
                 available[recurso.getID()] = recurso.getAvailable();
                 allocation[recurso.getID()].put(rrb.getThread().getID(), recurso.getAllocated(rrb.getThread()));
                 RRBs.remove(rrb);
@@ -379,32 +368,15 @@ public class ResourceCB extends IflResourceCB
         ResourceCB recurso;
 
         Enumeration e = RRBs.elements();
-        
-        Boolean flag = true;
 
-
-        
+        // libera os recursos
         this.setAvailable( (this.getAvailable() + quantity) );
         this.setAllocated(thread, (this.getAllocated(thread) - quantity) );
         
         available[id] = this.getAvailable();
         allocation[id].put(thread.getID(), this.getAllocated(thread));
-
-        //será que não tem que tirar o rrb aqui ?
         
-        /*while(e.hasMoreElements() && flag){
-            rrb = (RRB)e.nextElement();
-            auxThread = rrb.getThread();
-            if(thread.getID() == auxThread.getID()) flag = false;
-        }
-
-        e = RRBs.elements();
-
-
-        if(this.getAllocated(thread) == 0)  RRBs.remove(rrb);
-        */
-
-        
+        // verifica se ha algum RRB que pode ter seus recursos alocados
         while(e.hasMoreElements()) {
             rrb = (RRB)e.nextElement();
             recurso = rrb.getResource();
@@ -415,19 +387,7 @@ public class ResourceCB extends IflResourceCB
                 RRBs.remove(rrb);
                 e = RRBs.elements();
             }
-        }
-
-        /*while(e.hasMoreElements()) {
-            rrb = (RRB)e.nextElement();
-            quant = rrb.getQuantity();
-            if(quant <= available[id]) {
-                rrb.grant();
-                available[id] -= quant;
-                allocation[id].put(thread.getID(), quant);
-                RRBs.remove(rrb);
-            }
-        }*/
-                
+        }     
     }
 
     /** Called by OSP after printing an error message. The student can
@@ -461,10 +421,10 @@ public class ResourceCB extends IflResourceCB
        Feel free to add methods/fields to improve the readability of your code
     */
 
+
     /*  Método auxiliar (do_deadlockDetection): retorna 'true' se
         'request' < 'work'. Em vez de usar o próprio 'request', utiliza
-        os rrbs suspensos.
-    */
+        os rrbs suspensos. */
     public static boolean requestMenorWork(int[] work, int threadID)
     {
         Enumeration en = RRBs.elements();
