@@ -16,6 +16,9 @@
 *19/10/2010
 *1. Tentativa de verificar erros sem sucesso.
 *
+*21/10/2010
+*1. Programa funcionando com Deadlock Detection.
+*2. Falta corrigir o avoidance.
 * */ 
 
 package osp.Resources;
