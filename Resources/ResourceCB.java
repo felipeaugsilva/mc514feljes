@@ -19,6 +19,10 @@
 *21/10/2010
 *1. Programa funcionando com Deadlock Detection.
 *2. Falta corrigir o avoidance.
+*
+*22/10/2010
+*1. Não conseguimos fazer funcionar o Avoidance, acusa que rrb foi granted quando devia dar suspended, *porém não encontramos aonde poderia estar o erro, o codigo do avoidance foi refeito 3 vezes de 3 *maneiras diferentes e mesmo assim dava o erro. 
+*2. O programa funciona PERFEITAMENTE com o algoritmo de Detection
 * */ 
 
 package osp.Resources;
@@ -108,12 +112,6 @@ public class ResourceCB extends IflResourceCB
 	int work, alocado, necessario = ( this.getMaxClaim(thread) - this.getAllocated(thread) );
 
         int id = this.getID();
-   
-        int n = allocation[id].size(), threadID;
-
-        Enumeration keys_alloc = allocation[id].keys();
-
-        Enumeration keys_finish, elems_finish;
 
         Enumeration keys_need = need[id].keys(), en;
 
@@ -130,10 +128,8 @@ public class ResourceCB extends IflResourceCB
 
         while(en.hasMoreElements()){
             rrbaux = (RRB)en.nextElement();
-            if(rrbaux.getID() == id) rrbs.add(rrbaux);
+            if(rrbaux.getID() == id) rrbs.add(rrbaux); //se for um rrb desta thread entao "fingimos" que alocamos
         }
-
-        //rrbs.add(rrb);
 
 
         if( quantity <= ( this.getMaxClaim(thread) - this.getAllocated(thread) ) && quantity <= this.getMaxClaim(thread) )
@@ -143,18 +139,18 @@ public class ResourceCB extends IflResourceCB
             if( ResourceCB.getDeadlockMethod() == Avoidance )
 	    {
                 work = this.getAvailable() - quantity;
-	        en = rrbs.elements();
-                while(en.hasMoreElements()) {
+	            en = rrbs.elements();
+                while(en.hasMoreElements()) {   //verifica todos os rrbs até encontrar um que possa ser satisfeito.
                     rrbaux = (RRB)en.nextElement();
                     if(rrbaux.getQuantity() <= work) {
                         work += rrbaux.getQuantity();
-                        rrbs.remove(rrbaux);
+                        rrbs.remove(rrbaux);          //remove o rrb que pode ser granted
                         en = rrbs.elements();
                     }
                }
 	    } //banqueiro
 
-            if(!(rrbs.isEmpty())) flag = false;
+            if(!(rrbs.isEmpty())) flag = false;   //se esse vetor estiver vazio eh porque todos os rrbs puderam ser granted
 	  }
           else
 	  {
@@ -178,10 +174,7 @@ public class ResourceCB extends IflResourceCB
 
         if(flag)
         {
-          //sistema em estado seguro	
-          // atualiza allocation
-          // atualiza available
-          // rrb.do_grant()
+          //sistema em estado seguro	    
             
           if(allocation[id].get(thread.getID()) != null)
               allocation[id].put(thread.getID(), (allocation[id].get(thread.getID()) + quantity));
@@ -194,10 +187,8 @@ public class ResourceCB extends IflResourceCB
         else
         {
           // sistema em estado inseguro	
-          // nao aloca, retem o estado
-          // processo deve esperar??
- 	  rrb.setStatus(Suspended);
-	  thread.suspend(rrb);
+ 	      rrb.setStatus(Suspended);
+	      thread.suspend(rrb);
           RRBs.add(rrb);
           if(request[id].keys().hasMoreElements()) {
               if(request[id].contains(thread.getID()))
@@ -207,7 +198,7 @@ public class ResourceCB extends IflResourceCB
           }
           else
                 request[id].put(thread.getID(), quantity);
-	  threads.put(thread.getID(), thread);
+	      threads.put(thread.getID(), thread);
           }
         
         return rrb;
