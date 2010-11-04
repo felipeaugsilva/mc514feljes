@@ -25,8 +25,14 @@ public class PageTable extends IflPageTable
     */
     public PageTable(TaskCB ownerTask)
     {
-        // your code goes here
+        super(ownerTask);
 
+        int tamanhoPag = (int)Math.pow(2, MMU.getVirtualAddressBits());
+
+        pages = new PageTableEntry[tamanhoPag];
+
+        for(int i = 0; i < tamanhoPag; i++)
+            pages[i] = new PageTableEntry(this, i);
     }
 
     /**

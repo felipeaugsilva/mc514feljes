@@ -24,7 +24,7 @@ public class FrameTableEntry extends IflFrameTableEntry
     */
     public FrameTableEntry(int frameID)
     {
-        // your code goes here
+        super(frameID);
 
     }
 
