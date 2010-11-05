@@ -1,3 +1,16 @@
+/*
+* Grupo 05
+* RA: 081704
+* RA: 096993
+*
+*04/11/2010
+* 1. Feito o MMU
+* 2. Feito o PageTable
+* 3. Começou o PageFaultHandler
+* 4. Nada foi testado ainda.
+*/
+
+
 package osp.Memory;
 
 import java.util.*;
@@ -25,7 +38,13 @@ public class MMU extends IflMMU
     */
     public static void init()
     {
-        // your code goes here
+        int numFrames = MMU.getFrameTableSize();
+        FrameTableEntry frame;
+
+        for (int i = 0; i < numFrames; i++){
+            frame = new FrameTableEntry();
+            MMU.setFrame(i, frame);
+        }
 
     }
 
@@ -51,9 +70,47 @@ public class MMU extends IflMMU
     static public PageTableEntry do_refer(int memoryAddress,
 					  int referenceType, ThreadCB thread)
     {
-        // your code goes here
 
-    }
+       int i, end = memoryAddress;
+       PageTable pt = MMU.getPTBR();       
+       SystemEvent pfEvent = new SystemEvent("PageFault");
+
+       end = (end >>> MMU.getPageAddressBits());
+
+       if( pt.pages[end].isValid() ) {                                           //pagina valida
+           pt.pages[end].getFrame().setDirty(true);
+           pt.pages[end].getFrame().setReferenced(true);
+           return pt.pages[end];
+       }
+       else {                                                                    //pagina invalida
+           if(pt.pages[end].getValidatingThread() != null){                      //thread tentando referenciar esta pagian e causou pagefault
+               thread.suspend(pfEvent);
+               if(thread.getStatus() != ThreadKill) {
+                   pt.pages[end].getFrame().setDirty(true);
+                   pt.pages[end].getFrame().setReferenced(true);
+                   return pt.pages[end];
+               }
+               else {
+                   return pt.pages[end];
+               }
+
+           }
+           else {                                                                //nenhuma thread referenciou esta pagina ainda entao deve ser causado um pagefault
+               InterruptVector.setPage(pt.pages[end]);
+               InterruptVector.setReferenceType(referenceType);
+               InterruptVector.setThread(thread);
+               CPU.interrupt(PageFault);
+               if(thread.getStatus() != ThreadKill) {
+                   pt.pages[end].getFrame().setDirty(true);
+                   pt.pages[end].getFrame().setReferenced(true);
+                   return pt.pages[end];
+               }
+               else {
+                   return pt.pages[end];
+               }
+           }
+       }
+   }
 
     /** Called by OSP after printing an error message. The student can
 	insert code here to print various tables and data structures
