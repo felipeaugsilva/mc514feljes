@@ -76,7 +76,39 @@ public class PageFaultHandler extends IflPageFaultHandler
 					 int referenceType,
 					 PageTableEntry page)
     {
-        // your code goes here
+        int numFrames = MMU.getFrameTableSize();
+        FrameTableEntry frame;
+        boolean semMemSufic = true;
+        SystemEvent pfEvent = new SystemEvent("PageFault");
+        thread.suspend(pfEvent);
+        
+        // verifica se a pagina ja esta carregada
+        if(page.isValid()) {
+            pfEvent.notifyThreads();
+            ThreadCB.dispatch();
+            return FAILURE;
+        }
+
+        // verifica se ha algum frame que nao esteja 'travado' ou reservado
+        for(int i = 0; i < numFrames; i++) {
+            frame = MMU.getFrame(i);
+            if(!frame.isReserved() || frame.getLockCount() <= 0)
+                semMemSufic = false;
+        }
+        if(semMemSufic) {
+            pfEvent.notifyThreads();
+            ThreadCB.dispatch();
+            return NotEnoughMemory;
+        }
+
+
+        // verifica se a thread foi morta enquanto esperava pela pagina >>>>>>>>>>>>>> chamar depois de swap in e out
+        if(thread.getStatus() == ThreadKill) {
+            pfEvent.notifyThreads();
+            ThreadCB.dispatch();
+            return FAILURE;
+        }
+        
 
     }
 
