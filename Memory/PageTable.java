@@ -27,11 +27,11 @@ public class PageTable extends IflPageTable
     {
         super(ownerTask);
 
-        int tamanhoPag = (int)Math.pow(2, MMU.getVirtualAddressBits());
+        int numPages = (int)Math.pow(2, MMU.getPageAddressBits());
 
-        pages = new PageTableEntry[tamanhoPag];
+        pages = new PageTableEntry[numPages];
 
-        for(int i = 0; i < tamanhoPag; i++)
+        for(int i = 0; i < numPages; i++)
             pages[i] = new PageTableEntry(this, i);
     }
 
@@ -43,7 +43,21 @@ public class PageTable extends IflPageTable
     */
     public void do_deallocateMemory()
     {
-        // your code goes here
+        FrameTableEntry frame;
+        PageTableEntry page;
+
+        for(int i = 0; i < MMU.getPageAddressBits(); i++) {
+
+            page = pages[i];
+
+            if(page.isValid()) {
+                frame = page.getFrame();
+                frame.setDirty(false);
+                frame.setReferenced(false);
+                if(frame.getReserved() == page.getTask())
+                    frame.setUnreserved(page.getTask());
+            }
+        }
 
     }
 
