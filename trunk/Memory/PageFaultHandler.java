@@ -77,11 +77,15 @@ public class PageFaultHandler extends IflPageFaultHandler
 					 PageTableEntry page)
     {
         int numFrames = MMU.getFrameTableSize();
-        FrameTableEntry frame;
+        FrameTableEntry frame = null;
         boolean semMemSufic = true;
+        boolean freeFrame = false;
         SystemEvent pfEvent = new SystemEvent("PageFault");
         thread.suspend(pfEvent);
-        
+        OpenFile swapFile;
+
+        page.setValidatingThread(thread);
+
         // verifica se a pagina ja esta carregada
         if(page.isValid()) {
             pfEvent.notifyThreads();
@@ -101,15 +105,94 @@ public class PageFaultHandler extends IflPageFaultHandler
             return NotEnoughMemory;
         }
 
+        // procura um frame livre
+        for(int i = 0; i < numFrames && !freeFrame; i++) {
+            frame = MMU.getFrame(i);
+            if(frame.getPage() == null)
+                freeFrame = true;
+        }
+        // se nao houver nenhum, chama pageReplacement
+        if(!freeFrame)
+            frame = pageReplacement(thread);
 
-        // verifica se a thread foi morta enquanto esperava pela pagina >>>>>>>>>>>>>> chamar depois de swap in e out
+        // verifica se a thread foi morta enquanto esperava swap out de alguma pagina
+        if(thread.getStatus() == ThreadKill) {
+            pfEvent.notifyThreads();
+            ThreadCB.dispatch();
+            return FAILURE;
+        }
+
+        // realiza swap in da pagina solicitada
+        swapFile = thread.getTask().getSwapFile();
+        swapFile.read(page.getID(), page, thread);
+
+        // verifica se a thread foi morta enquanto esperava swap in da pagina
         if(thread.getStatus() == ThreadKill) {
             pfEvent.notifyThreads();
             ThreadCB.dispatch();
             return FAILURE;
         }
         
+        // atualiza page table
+        page.setValidatingThread(null);
+        page.setValid(true);
+        page.setFrame(frame);
 
+        // atualiza frame table
+        frame.setUnreserved(thread.getTask());
+        frame.setPage(page);
+        frame.setDirty(false);
+        frame.setReferenced(true);
+
+        // notifica threads e chama dispatcher
+        pfEvent.notifyThreads();
+        ThreadCB.dispatch();
+
+        return SUCCESS;
+    }
+
+    /*
+     * Algoritmo para page replacement: Second Chance.
+     * Supoe que ha pelo menos algum frame que nao esteja 'travado' ou reservado.
+     * Realiza swap out se a pagina vitima tiver sido modificada.
+     * Retorna frame liberado
+     */
+    public static FrameTableEntry pageReplacement(ThreadCB thread)
+    {
+        FrameTableEntry frame;
+        PageTableEntry page;
+        OpenFile swapFile;
+        int numFrames = MMU.getFrameTableSize();
+        int i = 0;
+
+        // percorre frame table circularmente
+        while(true) {
+
+            frame = MMU.getFrame(i);
+
+            // frame 'travado' ou reservado
+            if(frame.isReserved() || frame.getLockCount() > 0) {
+                i = (i+1) % numFrames;
+                continue;
+            }
+            // se o bit de referencia for 1, zera e vai pro proximo frame
+            if(frame.isReferenced()) {
+                frame.setReferenced(false);
+                i = (i+1) % numFrames;
+                continue;
+            }
+            // achou
+            // se a pagina foi modificada, realiza swap out
+            if(frame.isDirty()) {
+                page = frame.getPage();
+                swapFile = page.getTask().getSwapFile();
+                swapFile.write(page.getID(), page, page.getTask().getCurrentThread());  //verificar terceiro argumento
+                frame.setDirty(false);
+            }
+            frame.setUnreserved(thread.getTask());
+            frame.setPage(null);
+            return frame;
+        }
     }
 
 
