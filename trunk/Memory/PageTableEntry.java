@@ -27,7 +27,7 @@ public class PageTableEntry extends IflPageTableEntry
     */
     public PageTableEntry(PageTable ownerPageTable, int pageNumber)
     {
-        // your code goes here
+        super(ownerPageTable,pageNumber);
 
     }
 
@@ -47,7 +47,35 @@ public class PageTableEntry extends IflPageTableEntry
      */
     public int do_lock(IORB iorb)
     {
-        // your code goes here
+       if( this.isValid() ) {                                           //pagina valida
+           this.getFrame().incrementLockCount();
+           return SUCCESS;
+       }
+       else{
+           if(!(this.getValidatingThread() == iorb.getThread())){
+               PageFaultHandler.handlePageFault(iorb.getThread(), NONE, this);
+               if(this.isValid()){
+                   if(iorb.getThread().getStatus() != ThreadKill) {
+                       this.getFrame().incrementLockCount();
+                       return SUCCESS;
+                   }
+                   else {
+                       return FAILURE;
+                   }
+               }
+               else{
+                   return FAILURE;
+               }
+           }
+           else{
+               this.getValidatingThread().suspend(this);
+               if(this.isValid()){
+                   this.getFrame().incrementLockCount();
+                   return SUCCESS;
+               }
+               else return FAILURE;
+           }
+       }
 
     }
 
@@ -59,7 +87,9 @@ public class PageTableEntry extends IflPageTableEntry
     */
     public void do_unlock()
     {
-        // your code goes here
+        if(this.getFrame().getLockCount() != 0){
+            this.getFrame().decrementLockCount();
+        }
 
     }
 

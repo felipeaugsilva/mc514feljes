@@ -42,7 +42,7 @@ public class MMU extends IflMMU
         FrameTableEntry frame;
 
         for (int i = 0; i < numFrames; i++){
-            frame = new FrameTableEntry();
+            frame = new FrameTableEntry(i);
             MMU.setFrame(i, frame);
         }
 
