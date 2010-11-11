@@ -19,6 +19,8 @@ import osp.IFLModules.*;
 */
 public class PageFaultHandler extends IflPageFaultHandler
 {
+    static int frameNum = 0;    // frame que sera analisado no page replacement
+
     /**
         This method handles a page fault. 
 
@@ -154,8 +156,9 @@ public class PageFaultHandler extends IflPageFaultHandler
     /*
      * Algoritmo para page replacement: Second Chance.
      * Supoe que ha pelo menos algum frame que nao esteja 'travado' ou reservado.
+     * Utiliza variavel estatica frameNum para "lembrar" ultima pagina substituida.
      * Realiza swap out se a pagina vitima tiver sido modificada.
-     * Retorna frame liberado
+     * Retorna frame liberado.
      */
     public static FrameTableEntry pageReplacement(ThreadCB thread)
     {
@@ -163,22 +166,21 @@ public class PageFaultHandler extends IflPageFaultHandler
         PageTableEntry page;
         OpenFile swapFile;
         int numFrames = MMU.getFrameTableSize();
-        int i = 0;
 
         // percorre frame table circularmente
         while(true) {
 
-            frame = MMU.getFrame(i);
+            frame = MMU.getFrame(frameNum);
 
             // frame 'travado' ou reservado
             if(frame.isReserved() || frame.getLockCount() > 0) {
-                i = (i+1) % numFrames;
+                frameNum = (frameNum+1) % numFrames;
                 continue;
             }
             // se o bit de referencia for 1, zera e vai pro proximo frame
             if(frame.isReferenced()) {
                 frame.setReferenced(false);
-                i = (i+1) % numFrames;
+                frameNum = (frameNum+1) % numFrames;
                 continue;
             }
             // achou
@@ -189,6 +191,7 @@ public class PageFaultHandler extends IflPageFaultHandler
                 swapFile.write(page.getID(), page, page.getTask().getCurrentThread());  //verificar terceiro argumento
                 frame.setDirty(false);
             }
+            page.setValid(false);
             frame.setUnreserved(thread.getTask());
             frame.setPage(null);
             return frame;
