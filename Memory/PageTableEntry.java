@@ -47,6 +47,9 @@ public class PageTableEntry extends IflPageTableEntry
      */
     public int do_lock(IORB iorb)
     {
+
+        SystemEvent pfEvent = new SystemEvent("PageFault");
+
        if( this.isValid() ) {                                           //pagina valida
            this.getFrame().incrementLockCount();
            return SUCCESS;
@@ -68,7 +71,7 @@ public class PageTableEntry extends IflPageTableEntry
                }
            }
            else{
-               this.getValidatingThread().suspend(this);
+               this.getValidatingThread().suspend(pfEvent);
                if(this.isValid()){
                    this.getFrame().incrementLockCount();
                    return SUCCESS;
