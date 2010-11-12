@@ -8,6 +8,9 @@
 * 2. Feito o PageTable
 * 3. Começou o PageFaultHandler
 * 4. Nada foi testado ainda.
+ *
+ *11/11/2010
+ * 1. Todas as classes implementadas só falta testar.
 */
 
 
@@ -20,6 +23,7 @@ import osp.Tasks.*;
 import osp.Utilities.*;
 import osp.Hardware.*;
 import osp.Interrupts.*;
+import java.lang.Math;
 
 /**
     The MMU class contains the student code that performs the work of
@@ -40,11 +44,12 @@ public class MMU extends IflMMU
     {
         int numFrames = MMU.getFrameTableSize();
         FrameTableEntry frame;
-
+        
         for (int i = 0; i < numFrames; i++){
             frame = new FrameTableEntry(i);
             MMU.setFrame(i, frame);
         }
+        MyOut.print("osp.Memory.MMU", "init MMU");
 
     }
 
@@ -71,16 +76,23 @@ public class MMU extends IflMMU
 					  int referenceType, ThreadCB thread)
     {
 
-       int i, end = memoryAddress;
+       int i, end = 0;
+       int aux = MMU.getVirtualAddressBits() - MMU.getPageAddressBits();
+       int tamPage = (int)Math.pow(2, aux);
        PageTable pt = MMU.getPTBR();       
        SystemEvent pfEvent = new SystemEvent("PageFault");
 
-       end = (end >>> MMU.getPageAddressBits());
+       MyOut.print("osp.Memory.MMU", "endereço de memória " + memoryAddress);
+       MyOut.print("osp.Memory.MMU", "tamanho pag " + tamPage);
+
+       end = memoryAddress/tamPage;
+
+       MyOut.print("osp.Memory.MMU", "num pag " + end);
 
        if( pt.pages[end].isValid() ) {                                           //pagina valida
            pt.pages[end].getFrame().setDirty(true);
            pt.pages[end].getFrame().setReferenced(true);
-           return pt.pages[end];
+           //return pt.pages[end];
        }
        else {                                                                    //pagina invalida
            if(pt.pages[end].getValidatingThread() != null){                      //thread tentando referenciar esta pagian e causou pagefault
@@ -88,10 +100,10 @@ public class MMU extends IflMMU
                if(thread.getStatus() != ThreadKill) {
                    pt.pages[end].getFrame().setDirty(true);
                    pt.pages[end].getFrame().setReferenced(true);
-                   return pt.pages[end];
+                   //return pt.pages[end];
                }
                else {
-                   return pt.pages[end];
+                   //return pt.pages[end];
                }
 
            }
@@ -103,13 +115,15 @@ public class MMU extends IflMMU
                if(thread.getStatus() != ThreadKill) {
                    pt.pages[end].getFrame().setDirty(true);
                    pt.pages[end].getFrame().setReferenced(true);
-                   return pt.pages[end];
+                   //return pt.pages[end];
                }
                else {
-                   return pt.pages[end];
+                   //return pt.pages[end];
                }
            }
        }
+       MyOut.print("osp.Memory.MMU", "shift depois");
+       return pt.pages[end];
    }
 
     /** Called by OSP after printing an error message. The student can
