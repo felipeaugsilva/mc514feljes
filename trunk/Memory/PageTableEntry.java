@@ -71,8 +71,18 @@ public class PageTableEntry extends IflPageTableEntry
                }
            }
            if(this.getValidatingThread() == iorb.getThread()){
-               this.getFrame().incrementLockCount();
-               return SUCCESS;
+               if(this.isValid()){
+                   if(iorb.getThread().getStatus() != ThreadKill) {
+                       this.getFrame().incrementLockCount();
+                       return SUCCESS;
+                   }
+                   else {
+                       return FAILURE;
+                   }
+               }
+               else{
+                   return FAILURE;
+               }
            }
            else{
                this.getValidatingThread().suspend(this);
