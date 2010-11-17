@@ -55,7 +55,7 @@ public class PageTableEntry extends IflPageTableEntry
            return SUCCESS;
        }
        else{
-           if(!(this.getValidatingThread() == iorb.getThread())){
+           if(this.getValidatingThread() == null){
                PageFaultHandler.handlePageFault(iorb.getThread(), NONE, this);
                if(this.isValid()){
                    if(iorb.getThread().getStatus() != ThreadKill) {
@@ -70,8 +70,12 @@ public class PageTableEntry extends IflPageTableEntry
                    return FAILURE;
                }
            }
+           if(this.getValidatingThread() == iorb.getThread()){
+               this.getFrame().incrementLockCount();
+               return SUCCESS;
+           }
            else{
-               this.getValidatingThread().suspend(pfEvent);
+               this.getValidatingThread().suspend(this);
                if(this.isValid()){
                    this.getFrame().incrementLockCount();
                    return SUCCESS;
