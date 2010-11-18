@@ -26,6 +26,10 @@ public class FrameTableEntry extends IflFrameTableEntry
     {
         super(frameID);
 
+        this.setDirty(false);
+        this.setPage(null);
+        this.setReferenced(false);
+
     }
 
 
