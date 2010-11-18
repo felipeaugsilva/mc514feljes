@@ -124,6 +124,8 @@ public class PageFaultHandler extends IflPageFaultHandler
             return FAILURE;
         }
 
+        page.setFrame(frame);
+
         // realiza swap in da pagina solicitada
         swapFile = thread.getTask().getSwapFile();
         swapFile.read(page.getID(), page, thread);
