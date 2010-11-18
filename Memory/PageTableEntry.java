@@ -47,51 +47,35 @@ public class PageTableEntry extends IflPageTableEntry
      */
     public int do_lock(IORB iorb)
     {
-
-       SystemEvent pfEvent = new SystemEvent("PageFault");
-
-       
+      
        if( this.isValid() ) {                                           //pagina valida
            this.getFrame().incrementLockCount();
            return SUCCESS;
        }
        else{
            if(this.getValidatingThread() == null){
-               if(PageFaultHandler.handlePageFault(iorb.getThread(), MemoryLock, this) == SUCCESS){
+               if( (PageFaultHandler.handlePageFault(iorb.getThread(), MemoryLock, this)) == SUCCESS ){
                //if(this.isValid()){
                    if(iorb.getThread().getStatus() != ThreadKill) {
                        this.getFrame().incrementLockCount();
                        return SUCCESS;
-                   }
-                   else {
-                       return FAILURE;
-                   }
+                   }                                  
                }
-               else{
-                   return FAILURE;
-               }
+               return FAILURE;
            }
-           if(this.getValidatingThread() == iorb.getThread()){
-               if(this.isValid()){
-                   if(iorb.getThread().getStatus() != ThreadKill) {
-                       this.getFrame().incrementLockCount();
-                       return SUCCESS;
-                   }
-                   else {
-                       return FAILURE;
-                   }
-               }
-               else{
-                   return FAILURE;
-               }
+           if(this.getValidatingThread() == iorb.getThread()){              
+               this.getFrame().incrementLockCount();
+               return SUCCESS;
            }
            else{
                this.getValidatingThread().suspend(this);
                if(this.isValid()){
-                   this.getFrame().incrementLockCount();
-                   return SUCCESS;
+                    if(iorb.getThread().getStatus() != ThreadKill) {
+                       this.getFrame().incrementLockCount();
+                       return SUCCESS;
+                   }                  
                }
-               else return FAILURE;
+               return FAILURE;
            }
        }
 
