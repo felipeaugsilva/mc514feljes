@@ -146,10 +146,11 @@ public class PageFaultHandler extends IflPageFaultHandler
         // atualiza frame table
         frame.setUnreserved(thread.getTask());
         frame.setPage(page);
-        frame.setDirty(false);
         frame.setReferenced(true);
         if(referenceType == MemoryWrite)
             frame.setDirty(true);
+        else
+            frame.setDirty(false);
 
         // notifica threads e chama dispatcher
         pfEvent.notifyThreads();
