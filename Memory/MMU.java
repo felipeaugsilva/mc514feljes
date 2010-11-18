@@ -96,7 +96,7 @@ public class MMU extends IflMMU
        }
        else {                                                                    //pagina invalida
            if(pt.pages[end].getValidatingThread() != null){                      //thread tentando referenciar esta pagian e causou pagefault
-               thread.suspend(pfEvent);
+               thread.suspend(pt.pages[end]);
                if(thread.getStatus() != ThreadKill) {
                    pt.pages[end].getFrame().setDirty(true);
                    pt.pages[end].getFrame().setReferenced(true);
