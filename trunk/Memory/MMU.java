@@ -90,7 +90,10 @@ public class MMU extends IflMMU
        MyOut.print("osp.Memory.MMU", "num pag " + end);
 
        if( pt.pages[end].isValid() ) {                                           //pagina valida
-           pt.pages[end].getFrame().setDirty(true);
+           if(referenceType == MemoryWrite)
+               pt.pages[end].getFrame().setDirty(true);
+           else
+               pt.pages[end].getFrame().setDirty(false);
            pt.pages[end].getFrame().setReferenced(true);
            //return pt.pages[end];
        }
@@ -99,7 +102,11 @@ public class MMU extends IflMMU
                thread.suspend(pt.pages[end]);
                if(pt.pages[end].isValid()){
                    if(thread.getStatus() != ThreadKill) {
-                       pt.pages[end].getFrame().setDirty(true);
+                       if(referenceType == MemoryWrite)
+                           pt.pages[end].getFrame().setDirty(true);
+                       else
+                           pt.pages[end].getFrame().setDirty(false);
+
                        pt.pages[end].getFrame().setReferenced(true);
                        //return pt.pages[end];
                    }
@@ -114,10 +121,15 @@ public class MMU extends IflMMU
                InterruptVector.setReferenceType(referenceType);
                InterruptVector.setThread(thread);
                CPU.interrupt(PageFault);
-               if(thread.getStatus() != ThreadKill) {
-                   pt.pages[end].getFrame().setDirty(true);
-                   pt.pages[end].getFrame().setReferenced(true);
-                   //return pt.pages[end];
+               if(pt.pages[end].isValid()){
+                   if(thread.getStatus() != ThreadKill) {
+                       if(referenceType == MemoryWrite)
+                           pt.pages[end].getFrame().setDirty(true);
+                       else
+                           pt.pages[end].getFrame().setDirty(false);
+                       pt.pages[end].getFrame().setReferenced(true);
+                       //return pt.pages[end];
+                   }
                }
                else {
                    //return pt.pages[end];
