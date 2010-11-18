@@ -48,16 +48,17 @@ public class PageTableEntry extends IflPageTableEntry
     public int do_lock(IORB iorb)
     {
 
-        SystemEvent pfEvent = new SystemEvent("PageFault");
+       SystemEvent pfEvent = new SystemEvent("PageFault");
 
+       
        if( this.isValid() ) {                                           //pagina valida
            this.getFrame().incrementLockCount();
            return SUCCESS;
        }
        else{
            if(this.getValidatingThread() == null){
-               PageFaultHandler.handlePageFault(iorb.getThread(), NONE, this);
-               if(this.isValid()){
+               if(PageFaultHandler.handlePageFault(iorb.getThread(), MemoryLock, this) == SUCCESS){
+               //if(this.isValid()){
                    if(iorb.getThread().getStatus() != ThreadKill) {
                        this.getFrame().incrementLockCount();
                        return SUCCESS;
@@ -104,9 +105,9 @@ public class PageTableEntry extends IflPageTableEntry
     */
     public void do_unlock()
     {
-        if(this.getFrame().getLockCount() != 0){
+        if(this.getFrame().getLockCount() != 0)
             this.getFrame().decrementLockCount();
-        }
+        
 
     }
 
