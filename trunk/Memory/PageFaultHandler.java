@@ -83,9 +83,9 @@ public class PageFaultHandler extends IflPageFaultHandler
         boolean semMemSufic = true;
         boolean freeFrame = false;
         SystemEvent pfEvent = new SystemEvent("PageFault");
-        thread.suspend(pfEvent);
         OpenFile swapFile;
 
+        thread.suspend(pfEvent);
         page.setValidatingThread(thread);
 
         // verifica se a pagina ja esta carregada
@@ -96,7 +96,7 @@ public class PageFaultHandler extends IflPageFaultHandler
         }
 
         // verifica se ha algum frame que nao esteja 'travado' ou reservado
-        for(int i = 0; i < numFrames; i++) {
+        for(int i = 0; i < numFrames && semMemSufic; i++) {
             frame = MMU.getFrame(i);
             if(!frame.isReserved() || frame.getLockCount() <= 0)
                 semMemSufic = false;
@@ -110,8 +110,10 @@ public class PageFaultHandler extends IflPageFaultHandler
         // procura um frame livre
         for(int i = 0; i < numFrames && !freeFrame; i++) {
             frame = MMU.getFrame(i);
-            if(frame.getPage() == null)
+            if(frame.getPage() == null) {
+                frame.setReserved(thread.getTask());
                 freeFrame = true;
+            }
         }
         // se nao houver nenhum, chama pageReplacement
         if(!freeFrame)
@@ -140,13 +142,14 @@ public class PageFaultHandler extends IflPageFaultHandler
         // atualiza page table
         page.setValidatingThread(null);
         page.setValid(true);
-        page.setFrame(frame);
 
         // atualiza frame table
         frame.setUnreserved(thread.getTask());
         frame.setPage(page);
         frame.setDirty(false);
         frame.setReferenced(true);
+        if(referenceType == MemoryWrite)
+            frame.setDirty(true);
 
         // notifica threads e chama dispatcher
         pfEvent.notifyThreads();
@@ -194,9 +197,10 @@ public class PageFaultHandler extends IflPageFaultHandler
                 swapFile.write(page.getID(), page, page.getTask().getCurrentThread());  //verificar terceiro argumento
                 frame.setDirty(false);
             }
+            page.setFrame(null);
             page.setValid(false);
-            frame.setUnreserved(thread.getTask());
             frame.setPage(null);
+            frame.setReserved(thread.getTask());
             return frame;
         }
     }
