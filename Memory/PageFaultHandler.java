@@ -195,13 +195,15 @@ public class PageFaultHandler extends IflPageFaultHandler
             // se a pagina foi modificada, realiza swap out
             if(frame.isDirty()) {
                 swapFile = page.getTask().getSwapFile();
-                swapFile.write(page.getID(), page, page.getTask().getCurrentThread());  //verificar terceiro argumento
+                swapFile.write(page.getID(), page, thread);  //verificar terceiro argumento
                 frame.setDirty(false);
             }
-            page.setFrame(null);
-            page.setValid(false);
             frame.setPage(null);
             frame.setReserved(thread.getTask());
+            frame.setReferenced(false);
+            page.setValid(false);
+            page.setFrame(null);
+            
             return frame;
         }
     }
