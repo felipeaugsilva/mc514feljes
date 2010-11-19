@@ -46,18 +46,19 @@ public class PageTable extends IflPageTable
         FrameTableEntry frame;
         PageTableEntry page;
 
+        // libera todos os frames que estavam associados a task
         for(int i = 0; i < (int)Math.pow(2, MMU.getPageAddressBits()); i++) {
-
             page = pages[i];
 
-            if(page.isValid()) {
-                frame = page.getFrame();
+            frame = page.getFrame();
+            if(frame != null) {
                 frame.setDirty(false);
                 frame.setReferenced(false);
                 frame.setPage(null);
             }
         }
 
+        // verifica se ha frames reservados para esta task
         for(int i = 0; i < MMU.getFrameTableSize(); i++) {
             frame = MMU.getFrame(i);
             if(frame.getReserved() == this.getTask())

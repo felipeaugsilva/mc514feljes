@@ -92,6 +92,8 @@ public class PageFaultHandler extends IflPageFaultHandler
         // verifica se a pagina ja esta carregada
         if(page.isValid()) {
             pfEvent.notifyThreads();
+            page.notifyThreads();
+            page.setValidatingThread(null);
             ThreadCB.dispatch();
             return FAILURE;
         }
@@ -99,11 +101,12 @@ public class PageFaultHandler extends IflPageFaultHandler
         // verifica se ha algum frame que nao esteja 'travado' ou reservado
         for(int i = 0; i < numFrames && semMemSufic; i++) {
             frame = MMU.getFrame(i);
-            if(!frame.isReserved() || frame.getLockCount() <= 0)
+            if(!frame.isReserved() || frame.getLockCount() == 0)
                 semMemSufic = false;
         }
         if(semMemSufic) {
             pfEvent.notifyThreads();
+            page.setValidatingThread(null);
             ThreadCB.dispatch();
             return NotEnoughMemory;
         }
@@ -111,7 +114,7 @@ public class PageFaultHandler extends IflPageFaultHandler
         // procura um frame livre
         for(int i = 0; i < numFrames && !freeFrame; i++) {
             frame = MMU.getFrame(i);
-            if(frame.getPage() == null) {
+            if(frame.getPage() == null && !frame.isReserved() && frame.getLockCount() == 0) {
                 frame.setReserved(thread.getTask());
                 freeFrame = true;
                 reservou = true;
@@ -123,8 +126,8 @@ public class PageFaultHandler extends IflPageFaultHandler
 
         // verifica se a thread foi morta enquanto esperava swap out de alguma pagina
         if(thread.getStatus() == ThreadKill) {
-            //frame.setUnreserved(thread.getTask());
             pfEvent.notifyThreads();
+            page.setValidatingThread(null);
             ThreadCB.dispatch();
             return FAILURE;
         }
@@ -139,8 +142,8 @@ public class PageFaultHandler extends IflPageFaultHandler
 
         // verifica se a thread foi morta enquanto esperava swap in da pagina
         if(thread.getStatus() == ThreadKill) {
-            //frame.setUnreserved(thread.getTask());
             pfEvent.notifyThreads();
+            page.setValidatingThread(null);
             ThreadCB.dispatch();
             return FAILURE;
         }
@@ -150,16 +153,15 @@ public class PageFaultHandler extends IflPageFaultHandler
         page.setValid(true);
 
         // atualiza frame table
-        frame.setUnreserved(thread.getTask());
         frame.setPage(page);
         frame.setReferenced(true);
         if(referenceType == MemoryWrite)
             frame.setDirty(true);
-        else
-            frame.setDirty(false);
+        frame.setUnreserved(thread.getTask());
 
-        // notifica threads e chama dispatcher
+        // notifica threads e chama dispatcherError
         pfEvent.notifyThreads();
+        page.notifyThreads();
         ThreadCB.dispatch();
 
         return SUCCESS;
@@ -201,15 +203,13 @@ public class PageFaultHandler extends IflPageFaultHandler
             // se a pagina foi modificada, realiza swap out
             if(frame.isDirty()) {
                 swapFile = page.getTask().getSwapFile();
-                swapFile.write(page.getID(), page, thread);  //verificar terceiro argumento
+                swapFile.write(page.getID(), page, thread);
                 frame.setDirty(false);
             }
             frame.setPage(null);
-            //frame.setReserved(thread.getTask());
             frame.setReferenced(false);
             page.setValid(false);
             page.setFrame(null);
-            
             return frame;
         }
     }
