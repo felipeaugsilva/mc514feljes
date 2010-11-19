@@ -49,7 +49,6 @@ public class PageTable extends IflPageTable
         // libera todos os frames que estavam associados a task
         for(int i = 0; i < (int)Math.pow(2, MMU.getPageAddressBits()); i++) {
             page = pages[i];
-
             frame = page.getFrame();
             if(frame != null) {
                 frame.setDirty(false);
