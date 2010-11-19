@@ -14,6 +14,9 @@
  *
  *18/11/2010
  * 1. Correção de alguns erros.
+ *
+ *19/11/2010
+ * 1. Está funcionando apesar de alguns erros aleatórios do próprio OSP(Discrepância entre 0 e 0)
 */
 
 
@@ -82,22 +85,14 @@ public class MMU extends IflMMU
        int aux = MMU.getVirtualAddressBits() - MMU.getPageAddressBits();
        int tamPage = (int)Math.pow(2, aux);
        PageTable pt = MMU.getPTBR();       
-       SystemEvent pfEvent = new SystemEvent("PageFault");
 
-       //MyOut.print("osp.Memory.MMU", "endereço de memória " + memoryAddress);
-       //MyOut.print("osp.Memory.MMU", "tamanho pag " + tamPage);
 
        end = memoryAddress/tamPage;
-
-       //MyOut.print("osp.Memory.MMU", "num pag " + end);
 
        if( pt.pages[end].isValid() ) {                                           //pagina valida
            if(referenceType == MemoryWrite)
                pt.pages[end].getFrame().setDirty(true);
-           //else
-           //    pt.pages[end].getFrame().setDirty(false);
            pt.pages[end].getFrame().setReferenced(true);
-           //return pt.pages[end];
        }
        else {                                                                    //pagina invalida
            if(pt.pages[end].getValidatingThread() != null){                      //thread tentando referenciar esta pagian e causou pagefault
@@ -106,16 +101,9 @@ public class MMU extends IflMMU
                    if(thread.getStatus() != ThreadKill) {
                        if(referenceType == MemoryWrite)
                            pt.pages[end].getFrame().setDirty(true);
-                       //else
-                       //    pt.pages[end].getFrame().setDirty(false);
-
                        pt.pages[end].getFrame().setReferenced(true);
-                       //return pt.pages[end];
                    }
-               }
-               else {
-                   //return pt.pages[end];
-               }
+               }            
 
            }
            else {                                                                //nenhuma thread referenciou esta pagina ainda entao deve ser causado um pagefault
@@ -128,18 +116,11 @@ public class MMU extends IflMMU
                    if(thread.getStatus() != ThreadKill) {
                        if(referenceType == MemoryWrite)
                            pt.pages[end].getFrame().setDirty(true);
-                       //else
-                       //    pt.pages[end].getFrame().setDirty(false);
                        pt.pages[end].getFrame().setReferenced(true);
-                       //return pt.pages[end];
                    }
-               }
-               else {
-                   //return pt.pages[end];
                }
            }
        }
-       //MyOut.print("osp.Memory.MMU", "shift depois");
        return pt.pages[end];
    }
 
