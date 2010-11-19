@@ -92,8 +92,8 @@ public class MMU extends IflMMU
        if( pt.pages[end].isValid() ) {                                           //pagina valida
            if(referenceType == MemoryWrite)
                pt.pages[end].getFrame().setDirty(true);
-           else
-               pt.pages[end].getFrame().setDirty(false);
+           //else
+           //    pt.pages[end].getFrame().setDirty(false);
            pt.pages[end].getFrame().setReferenced(true);
            //return pt.pages[end];
        }
@@ -104,8 +104,8 @@ public class MMU extends IflMMU
                    if(thread.getStatus() != ThreadKill) {
                        if(referenceType == MemoryWrite)
                            pt.pages[end].getFrame().setDirty(true);
-                       else
-                           pt.pages[end].getFrame().setDirty(false);
+                       //else
+                       //    pt.pages[end].getFrame().setDirty(false);
 
                        pt.pages[end].getFrame().setReferenced(true);
                        //return pt.pages[end];
