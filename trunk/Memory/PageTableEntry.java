@@ -48,14 +48,13 @@ public class PageTableEntry extends IflPageTableEntry
     public int do_lock(IORB iorb)
     {
       
-       if( this.isValid() ) {                                           //pagina valida
+       if( this.isValid() ) {    //pagina valida
            this.getFrame().incrementLockCount();
            return SUCCESS;
        }
        else{
            if(this.getValidatingThread() == null){
                if( (PageFaultHandler.handlePageFault(iorb.getThread(), MemoryLock, this)) == SUCCESS ){
-               //if(this.isValid()){
                    if(iorb.getThread().getStatus() != ThreadKill) {
                        this.getFrame().incrementLockCount();
                        return SUCCESS;
@@ -91,8 +90,6 @@ public class PageTableEntry extends IflPageTableEntry
     {
         if(this.getFrame().getLockCount() != 0)
             this.getFrame().decrementLockCount();
-        
-
     }
 
 

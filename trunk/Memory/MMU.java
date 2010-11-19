@@ -52,7 +52,6 @@ public class MMU extends IflMMU
             frame = new FrameTableEntry(i);
             MMU.setFrame(i, frame);
         }
-        MyOut.print("osp.Memory.MMU", "init MMU");
 
     }
 
@@ -85,12 +84,12 @@ public class MMU extends IflMMU
        PageTable pt = MMU.getPTBR();       
        SystemEvent pfEvent = new SystemEvent("PageFault");
 
-       MyOut.print("osp.Memory.MMU", "endereço de memória " + memoryAddress);
-       MyOut.print("osp.Memory.MMU", "tamanho pag " + tamPage);
+       //MyOut.print("osp.Memory.MMU", "endereço de memória " + memoryAddress);
+       //MyOut.print("osp.Memory.MMU", "tamanho pag " + tamPage);
 
        end = memoryAddress/tamPage;
 
-       MyOut.print("osp.Memory.MMU", "num pag " + end);
+       //MyOut.print("osp.Memory.MMU", "num pag " + end);
 
        if( pt.pages[end].isValid() ) {                                           //pagina valida
            if(referenceType == MemoryWrite)
@@ -140,7 +139,7 @@ public class MMU extends IflMMU
                }
            }
        }
-       MyOut.print("osp.Memory.MMU", "shift depois");
+       //MyOut.print("osp.Memory.MMU", "shift depois");
        return pt.pages[end];
    }
 
