@@ -11,6 +11,9 @@
  *
  *11/11/2010
  * 1. Todas as classes implementadas só falta testar.
+ *
+ *18/11/2010
+ * 1. Correção de alguns erros.
 */
 
 
@@ -121,12 +124,13 @@ public class MMU extends IflMMU
                InterruptVector.setReferenceType(referenceType);
                InterruptVector.setThread(thread);
                CPU.interrupt(PageFault);
+               pt.pages[end].notifyThreads();
                if(pt.pages[end].isValid()){
                    if(thread.getStatus() != ThreadKill) {
                        if(referenceType == MemoryWrite)
                            pt.pages[end].getFrame().setDirty(true);
-                       else
-                           pt.pages[end].getFrame().setDirty(false);
+                       //else
+                       //    pt.pages[end].getFrame().setDirty(false);
                        pt.pages[end].getFrame().setReferenced(true);
                        //return pt.pages[end];
                    }

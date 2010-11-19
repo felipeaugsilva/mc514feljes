@@ -82,6 +82,7 @@ public class PageFaultHandler extends IflPageFaultHandler
         FrameTableEntry frame = null;
         boolean semMemSufic = true;
         boolean freeFrame = false;
+        boolean reservou = false;
         SystemEvent pfEvent = new SystemEvent("PageFault");
         OpenFile swapFile;
 
@@ -113,6 +114,7 @@ public class PageFaultHandler extends IflPageFaultHandler
             if(frame.getPage() == null) {
                 frame.setReserved(thread.getTask());
                 freeFrame = true;
+                reservou = true;
             }
         }
         // se nao houver nenhum, chama pageReplacement
@@ -121,11 +123,14 @@ public class PageFaultHandler extends IflPageFaultHandler
 
         // verifica se a thread foi morta enquanto esperava swap out de alguma pagina
         if(thread.getStatus() == ThreadKill) {
+            //frame.setUnreserved(thread.getTask());
             pfEvent.notifyThreads();
             ThreadCB.dispatch();
             return FAILURE;
         }
 
+        if(!reservou)
+            frame.setReserved(thread.getTask());
         page.setFrame(frame);
 
         // realiza swap in da pagina solicitada
@@ -134,6 +139,7 @@ public class PageFaultHandler extends IflPageFaultHandler
 
         // verifica se a thread foi morta enquanto esperava swap in da pagina
         if(thread.getStatus() == ThreadKill) {
+            //frame.setUnreserved(thread.getTask());
             pfEvent.notifyThreads();
             ThreadCB.dispatch();
             return FAILURE;
@@ -199,7 +205,7 @@ public class PageFaultHandler extends IflPageFaultHandler
                 frame.setDirty(false);
             }
             frame.setPage(null);
-            frame.setReserved(thread.getTask());
+            //frame.setReserved(thread.getTask());
             frame.setReferenced(false);
             page.setValid(false);
             page.setFrame(null);

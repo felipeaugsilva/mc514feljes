@@ -46,7 +46,7 @@ public class PageTable extends IflPageTable
         FrameTableEntry frame;
         PageTableEntry page;
 
-        for(int i = 0; i < MMU.getPageAddressBits(); i++) {
+        for(int i = 0; i < (int)Math.pow(2, MMU.getPageAddressBits()); i++) {
 
             page = pages[i];
 
@@ -54,9 +54,14 @@ public class PageTable extends IflPageTable
                 frame = page.getFrame();
                 frame.setDirty(false);
                 frame.setReferenced(false);
-                if(frame.getReserved() == page.getTask())
-                    frame.setUnreserved(page.getTask());
+                frame.setPage(null);
             }
+        }
+
+        for(int i = 0; i < MMU.getFrameTableSize(); i++) {
+            frame = MMU.getFrame(i);
+            if(frame.getReserved() == this.getTask())
+                frame.setUnreserved(this.getTask());
         }
 
     }
