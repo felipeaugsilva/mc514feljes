@@ -19,6 +19,7 @@ import java.util.*;
 
 public class Device extends IflDevice
 {
+
     /**
         This constructor initializes a device with the provided parameters.
 	As a first statement it must have the following:
@@ -31,8 +32,8 @@ public class Device extends IflDevice
     */
     public Device(int id, int numberOfBlocks)
     {
-        // your code goes here
-
+         super(id,numberOfBlocks);
+         
     }
 
     /**
@@ -43,8 +44,7 @@ public class Device extends IflDevice
     */
     public static void init()
     {
-        // your code goes here
-
+       GenericList iorbQueue = new GenericList();
     }
 
     /**
@@ -66,8 +66,30 @@ public class Device extends IflDevice
     */
     public int do_enqueueIORB(IORB iorb)
     {
-        // your code goes here
+        PageTableEntry page;
+        OpenFile openfile;
+        ThreadCB thread;
 
+
+        page = iorb.getPage();
+        openfile = iorb.getOpenFile();
+        thread = iorb.getThread();
+
+        page.lock(iorb);
+        openfile.incrementIORBCount();
+        iorb.setCylinder(iorb.getBlockNumber());
+
+        if(thread.getStatus() != ThreadKill){
+            if(!this.isBusy()){
+                this.startIO(iorb);
+                return SUCCESS;
+            }
+            else {
+                iorbQueue.ins
+            }
+        }
+        else return FAILURE;
+        return 0;
     }
 
     /**
