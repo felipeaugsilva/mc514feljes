@@ -85,11 +85,11 @@ public class Device extends IflDevice
                 return SUCCESS;
             }
             else {
-                iorbQueue.ins
+                ((GenericList)iorbQueue).insert(iorb);
+                return SUCCESS;
             }
         }
-        else return FAILURE;
-        return 0;
+        else return FAILURE;     
     }
 
     /**
