@@ -30,6 +30,7 @@ public class Device extends IflDevice
 
         @OSPProject Devices
     */
+
     public Device(int id, int numberOfBlocks)
     {
          super(id,numberOfBlocks);
@@ -100,7 +101,10 @@ public class Device extends IflDevice
     */
     public IORB do_dequeueIORB()
     {
-        // your code goes here
+        if(iorbQueue.isEmpty())
+            return null;
+
+        return (IORB)((GenericList)iorbQueue).removeTail(); // FIFO
 
     }
 
@@ -119,8 +123,22 @@ public class Device extends IflDevice
     */
     public void do_cancelPendingIO(ThreadCB thread)
     {
-        // your code goes here
+        IORB iorb;
+        OpenFile openFile;
+        Enumeration en = ((GenericList)iorbQueue).forwardIterator();
+        
+        while(en.hasMoreElements()) {
 
+            iorb = (IORB)en.nextElement();
+            openFile = iorb.getOpenFile();
+
+            if(iorb.getThread() == thread) {
+                iorb.getPage().unlock();
+                openFile.decrementIORBCount();
+                if(openFile.closePending)
+                    openFile.close();
+            }
+        }
     }
 
     /** Called by OSP after printing an error message. The student can
