@@ -7,7 +7,7 @@ package osp.Devices;
 
     @OSPProject Devices
 */
-
+import java.lang.Math;
 import osp.IFLModules.*;
 import osp.Threads.*;
 import osp.Utilities.*;
@@ -71,14 +71,27 @@ public class Device extends IflDevice
         OpenFile openfile;
         ThreadCB thread;
 
+        int blocks = MMU.getVirtualAddressBits() - MMU.getPageAddressBits();
+        int tamblocks = (int)Math.pow(2, blocks);
+
+        int SectorBytes = ((Disk)this).getBytesPerSector();
+        int TrackSectors = ((Disk)this).getSectorsPerTrack();
+        int CylinderTracks = ((Disk)this).getPlatters();
+
+        int NumSector = tamblocks/SectorBytes;
+        int NumTrack = NumSector/TrackSectors;
+        int Cylinder = NumTrack/((Disk)this).getTracksPerPlatter();
+
+
 
         page = iorb.getPage();
         openfile = iorb.getOpenFile();
         thread = iorb.getThread();
 
-        page.lock(iorb);
+        if(page.lock(iorb) == FAILURE) return FAILURE;
+        
         openfile.incrementIORBCount();
-        iorb.setCylinder(iorb.getBlockNumber());
+        iorb.setCylinder(Cylinder);
 
         if(thread.getStatus() != ThreadKill){
             if(!this.isBusy()){
