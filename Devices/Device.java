@@ -148,7 +148,7 @@ public class Device extends IflDevice
             if(iorb.getThread() == thread) {
                 iorb.getPage().unlock();
                 openFile.decrementIORBCount();
-                if(openFile.closePending)
+                if(openFile.closePending && openFile.getIORBCount() == 0)
                     openFile.close();
             }
         }
