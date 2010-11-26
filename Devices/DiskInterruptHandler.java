@@ -57,11 +57,9 @@ public class DiskInterruptHandler extends IflDiskInterruptHandler
         openfile = iorb.getOpenFile();
         openfile.decrementIORBCount();
 
-        if(openfile.closePending && openfile.getIORBCount() == 0)       //arquivo será fechado
-        {
-            device.cancelPendingIO(thread);
-            openfile.close();
-        }
+        if(openfile.closePending && openfile.getIORBCount() == 0) device.cancelPendingIO(thread);
+           
+        
 
         page.unlock();
 
