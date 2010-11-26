@@ -83,7 +83,7 @@ public class Device extends IflDevice
         int Cylinder = NumTrack/((Disk)this).getTracksPerPlatter();
 
 
-
+        MyOut.print("OSP.Devices.Device", "enqueue");
         page = iorb.getPage();
         openfile = iorb.getOpenFile();
         thread = iorb.getThread();
