@@ -50,34 +50,45 @@ public class DiskInterruptHandler extends IflDiskInterruptHandler
         PageTableEntry page;
 
         iorb = (IORB)InterruptVector.getEvent();
-        thread = InterruptVector.getThread();
+        thread = iorb.getThread();
         page = iorb.getPage();
         device = Device.get(iorb.getDeviceID());
 
         openfile = iorb.getOpenFile();
         openfile.decrementIORBCount();
 
-        if(openfile.closePending && openfile.getIORBCount() == 0) device.cancelPendingIO(thread);
-           
+        MyOut.print("OSP.Devices.DiskInterruptHandler", "do_handleInterrup");
+        if(openfile.closePending && openfile.getIORBCount() == 0) openfile.close();
         
 
         page.unlock();
 
-        if(thread.getTask().getStatus() == TaskLive) 
+        
+       
+        if(iorb.getDeviceID() != SwapDeviceID)
         {
-            if(iorb.getDeviceID() != SwapDeviceID)
-            {
+            if(thread.getTask().getStatus() != TaskTerm){
                 if(thread.getStatus() != ThreadKill)
                 {
-                    page.getFrame().setReferenced(true);
-                    if(iorb.getIOType() == FileRead) page.getFrame().setDirty(true);
+                        page.getFrame().setReferenced(true);
+                        if(iorb.getIOType() == FileRead) page.getFrame().setDirty(true);
                 }
             }
-            else page.getFrame().setDirty(false);
-            
         }
-        else {
-            if(page.getFrame().getReserved() == page.getTask()) page.getFrame().setUnreserved(page.getTask());           
+        else{
+            if(thread.getTask().getStatus() != TaskTerm){
+                if(thread.getStatus() != ThreadKill){
+                    page.getFrame().setDirty(false);
+                }
+            }
+        }
+            
+       
+        if(thread.getTask().getStatus() == TaskTerm) {
+            if(page.getFrame().getReserved() == page.getTask()) 
+                //if(thread.getStatus() != ThreadKill){
+                    page.getFrame().setUnreserved(page.getTask());
+                
         }
 
         iorb.notifyThreads();
