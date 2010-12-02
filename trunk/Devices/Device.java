@@ -33,8 +33,8 @@ public class Device extends IflDevice
 
     public Device(int id, int numberOfBlocks)
     {
-         super(id,numberOfBlocks);
-         
+         super(id, numberOfBlocks);
+         iorbQueue = new GenericList();
     }
 
     /**
@@ -45,7 +45,7 @@ public class Device extends IflDevice
     */
     public static void init()
     {
-       GenericList iorbQueue = new GenericList();
+       
     }
 
     /**
@@ -67,6 +67,7 @@ public class Device extends IflDevice
     */
     public int do_enqueueIORB(IORB iorb)
     {
+        MyOut.print("OSP.Devices.Device", "enqueue");
         PageTableEntry page;
         OpenFile openfile;
         ThreadCB thread;
@@ -83,7 +84,7 @@ public class Device extends IflDevice
         int Cylinder = NumTrack/((Disk)this).getTracksPerPlatter();
 
 
-        MyOut.print("OSP.Devices.Device", "enqueue");
+        
         page = iorb.getPage();
         openfile = iorb.getOpenFile();
         thread = iorb.getThread();
@@ -93,17 +94,15 @@ public class Device extends IflDevice
         openfile.incrementIORBCount();
         iorb.setCylinder(Cylinder);
 
-        if(thread.getStatus() != ThreadKill){
-            if(!this.isBusy()){
+        if(thread.getStatus() != ThreadKill) {
+            if(!this.isBusy())
                 this.startIO(iorb);
-                return SUCCESS;
-            }
-            else {
+            else
                 ((GenericList)iorbQueue).insert(iorb);
-                return SUCCESS;
-            }
+            return SUCCESS;
         }
-        else return FAILURE;     
+        else    // thread morreu
+            return FAILURE;
     }
 
     /**
