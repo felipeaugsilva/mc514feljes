@@ -79,11 +79,8 @@ public class Device extends IflDevice
         int TrackSectors = ((Disk)this).getSectorsPerTrack();
         int CylinderTracks = ((Disk)this).getPlatters();
 
-        int NumSector = tamblocks/SectorBytes;
-        int NumTrack = NumSector/TrackSectors;
-        int Cylinder = NumTrack/((Disk)this).getTracksPerPlatter();
-
-
+        int blocos = SectorBytes * TrackSectors * CylinderTracks /tamblocks ;
+        int Cylinder = iorb.getBlockNumber() / blocos;
         
         page = iorb.getPage();
         openfile = iorb.getOpenFile();
