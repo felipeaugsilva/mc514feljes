@@ -57,15 +57,11 @@ public class DiskInterruptHandler extends IflDiskInterruptHandler
         openfile = iorb.getOpenFile();
         openfile.decrementIORBCount();
 
-        MyOut.print("OSP.Devices.DiskInterruptHandler", "do_handleInterrup");
-        if(openfile.closePending && openfile.getIORBCount() == 0) openfile.close();
-        
+        if(openfile.closePending && openfile.getIORBCount() == 0) openfile.close();       // fecha o arquivo se for o caso
 
-        page.unlock();
-
-        
+        page.unlock();        
        
-        if(iorb.getDeviceID() != SwapDeviceID)
+        if(iorb.getDeviceID() != SwapDeviceID)                    //verifica se o device é o SwapDevice
         {
             if(thread.getTask().getStatus() != TaskTerm){
                 if(thread.getStatus() != ThreadKill)
@@ -85,10 +81,8 @@ public class DiskInterruptHandler extends IflDiskInterruptHandler
             
        
         if(thread.getTask().getStatus() == TaskTerm) {
-            if(page.getFrame().getReserved() == page.getTask()) 
-                //if(thread.getStatus() != ThreadKill){
-                    page.getFrame().setUnreserved(page.getTask());
-                
+            if(page.getFrame().getReserved() == page.getTask())
+                    page.getFrame().setUnreserved(page.getTask());                
         }
 
         iorb.notifyThreads();
