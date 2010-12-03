@@ -1,3 +1,14 @@
+/*
+* Grupo 05
+* RA: 081704
+* RA: 096993
+*
+* 02/12/2010
+ *1. Feito todas as classes.
+ *2. Projeto rodando.
+ *
+ */
+
 package osp.Devices;
 
 /**
