@@ -34,7 +34,7 @@ public class Device extends IflDevice
     public Device(int id, int numberOfBlocks)
     {
          super(id, numberOfBlocks);
-         iorbQueue = new GenericList();
+         this.iorbQueue = new GenericList();
     }
 
     /**
@@ -67,7 +67,6 @@ public class Device extends IflDevice
     */
     public int do_enqueueIORB(IORB iorb)
     {
-        MyOut.print("OSP.Devices.Device", "enqueue");
         PageTableEntry page;
         OpenFile openfile;
         ThreadCB thread;
@@ -95,7 +94,7 @@ public class Device extends IflDevice
             if(!this.isBusy())
                 this.startIO(iorb);
             else
-                ((GenericList)iorbQueue).insert(iorb);
+                ((GenericList)this.iorbQueue).insert(iorb);
             return SUCCESS;
         }
         else    // thread morreu
@@ -110,10 +109,10 @@ public class Device extends IflDevice
     */
     public IORB do_dequeueIORB()
     {
-        if(iorbQueue.isEmpty())
+        if(this.iorbQueue.isEmpty())
             return null;
 
-        return (IORB)((GenericList)iorbQueue).removeTail(); // FIFO
+        return (IORB)((GenericList)this.iorbQueue).removeTail(); // FIFO
 
     }
 
@@ -134,7 +133,7 @@ public class Device extends IflDevice
     {
         IORB iorb;
         OpenFile openFile;
-        Enumeration en = ((GenericList)iorbQueue).forwardIterator();
+        Enumeration en = ((GenericList)this.iorbQueue).forwardIterator();
         
         while(en.hasMoreElements()) {
 
@@ -142,10 +141,15 @@ public class Device extends IflDevice
             openFile = iorb.getOpenFile();
 
             if(iorb.getThread() == thread) {
+
                 iorb.getPage().unlock();
+
                 openFile.decrementIORBCount();
+
                 if(openFile.closePending && openFile.getIORBCount() == 0)
                     openFile.close();
+
+                ((GenericList)this.iorbQueue).remove(iorb);
             }
         }
     }
